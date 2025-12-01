@@ -1,127 +1,246 @@
 /* ---------------------------------------------------------------
-   LIFE COO — OPTION C — ULTRA LUXURY BASELINE (Dec 1)
-   Stable, minimal, predictable. No airline dropdown yet.
-   Backend → https://life-coo-realtime-backend.onrender.com
+   LIFE COO — FRONTEND (Option C, Render-aligned)
+   - Matches Option C index.html
+   - Talks to Render backend index.js
+   - Stable, minimal, UAT-ready
 --------------------------------------------------------------- */
 
 const API_BASE = "https://life-coo-realtime-backend.onrender.com";
 
-// DOM Elements ---------------------------------------------------
-const agentTextarea = document.getElementById("agent-textarea");
-const speakBtn = document.getElementById("speak-btn");
-const stopBtn = document.getElementById("stop-btn");
+// DOM REFERENCES ------------------------------------------------
 
-const fillBtn = document.getElementById("fill-btn");
-const optimizeBtn = document.getElementById("optimize-btn");
+// Header / drive mode
+const driveToggle = document.getElementById("driveToggle");
 
-const originInput = document.getElementById("origin-input");
-const destinationInput = document.getElementById("destination-input");
-const windowInput = document.getElementById("window-input");
-const travellersInput = document.getElementById("travellers-input");
-const preferencesInput = document.getElementById("preferences-input");
-const notesInput = document.getElementById("notes-input");
+// Agent box + actions
+const agentBox = document.getElementById("agentBox");
+const agentInput = document.getElementById("agentInput");
+const voiceBtn = document.getElementById("voiceBtn");
+const aiFillBtn = document.getElementById("aiFillBtn");
+const aiFillOptimizeBtn = document.getElementById("aiFillOptimizeBtn");
 
-// RHS Result blocks
-const recapContent = document.getElementById("recap-content");
-const optionsContent = document.getElementById("options-content");
-const riskContent = document.getElementById("risk-content");
+// Form fields
+const originInput = document.getElementById("origin");
+const destinationInput = document.getElementById("destination");
+const datesInput = document.getElementById("dates");
+const travellersInput = document.getElementById("travellers");
+const preferencesInput = document.getElementById("preferences");
+const outputStyleSelect = document.getElementById("outputStyle");
+const notesInput = document.getElementById("notes");
+
+// Sample + profile
+const sampleBtn = document.getElementById("sampleBtn");
+const routingUpdated = document.getElementById("routingUpdated");
+const rememberProfileCheckbox = document.getElementById("rememberProfile");
+const loadProfileBtn = document.getElementById("loadProfileBtn");
+
+// Optimize
+const optimizeBtn = document.getElementById("optimizeBtn");
+const playRecapCheckbox = document.getElementById("playRecap");
+
+// Results (RHS)
+const recapList = document.getElementById("recapList");
+const optionsContainer = document.getElementById("optionsContainer");
+const riskList = document.getElementById("riskList");
+
+// Risk pills
+const riskLow = document.getElementById("riskLow");
+const riskMedium = document.getElementById("riskMedium");
+const riskHigh = document.getElementById("riskHigh");
+
+// Airports datalist
+const airportListEl = document.getElementById("airportList");
+
+// Profile storage key
+const PROFILE_KEY = "lifeCooFamilyProfile_v1";
 
 // ---------------------------------------------------------------
-// Voice Recognition
+// INIT
 // ---------------------------------------------------------------
-let recognition = null;
-if ("webkitSpeechRecognition" in window) {
-  recognition = new webkitSpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = false;
-  recognition.lang = "en-US";
 
-  recognition.onstart = () => {
-    speakBtn.classList.add("hidden");
-    stopBtn.classList.remove("hidden");
-  };
+document.addEventListener("DOMContentLoaded", () => {
+  hydrateAirportDatalist();
+  resetResults();
+});
 
-  recognition.onend = () => {
-    speakBtn.classList.remove("hidden");
-    stopBtn.classList.add("hidden");
-  };
-
-  recognition.onerror = () => {
-    speakBtn.classList.remove("hidden");
-    stopBtn.classList.add("hidden");
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    agentTextarea.value = transcript;
-    runInterpret();
-  };
+// ---------------------------------------------------------------
+// AIRPORT DATALIST (from airports.json)
+// ---------------------------------------------------------------
+async function hydrateAirportDatalist() {
+  if (!airportListEl) return;
+  try {
+    const res = await fetch("airports.json");
+    if (!res.ok) return;
+    const airports = await res.json();
+    airportListEl.innerHTML = "";
+    airports.forEach((a) => {
+      const opt = document.createElement("option");
+      opt.value = `${a.city} (${a.code})`;
+      opt.label = `${a.city} (${a.code}) – ${a.name}`;
+      airportListEl.appendChild(opt);
+    });
+  } catch (err) {
+    console.error("Error loading airports.json", err);
+  }
 }
 
-// Voice triggers -------------------------------------------------
-speakBtn?.addEventListener("click", () => {
-  if (recognition) recognition.start();
-});
+// ---------------------------------------------------------------
+// BASIC UI HELPERS
+// ---------------------------------------------------------------
+function showRoutingUpdated(message) {
+  if (!routingUpdated) return;
+  routingUpdated.textContent = message || "Routing updated";
+  routingUpdated.classList.remove("hidden");
+}
 
-stopBtn?.addEventListener("click", () => {
-  if (recognition) recognition.stop();
-});
+function resetResults() {
+  if (recapList) {
+    recapList.innerHTML = "<li>No recap yet.</li>";
+  }
+  if (optionsContainer) {
+    optionsContainer.innerHTML = '<div class="placeholder">No routing options yet.</div>';
+  }
+  if (riskList) {
+    riskList.innerHTML = "<li>No risk details yet.</li>";
+  }
+}
+
+// Risk pill highlight
+function setRiskLevel(level) {
+  if (!riskLow || !riskMedium || !riskHigh) return;
+
+  [riskLow, riskMedium, riskHigh].forEach((pill) => {
+    pill.style.opacity = "0.4";
+    pill.style.boxShadow = "none";
+  });
+
+  let active = null;
+  if (level === "Low") active = riskLow;
+  else if (level === "High") active = riskHigh;
+  else active = riskMedium; // default Medium
+
+  if (active) {
+    active.style.opacity = "1";
+    active.style.boxShadow = "0 0 15px rgba(56,189,248,0.5)";
+  }
+}
 
 // ---------------------------------------------------------------
-// API Helpers
+// API HELPER (POST JSON)
 // ---------------------------------------------------------------
-async function postJSON(url, payload) {
+async function postJSON(path, body) {
+  const url = `${API_BASE}${path}`;
   try {
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body)
     });
-    if (!response.ok) throw new Error("Bad response from server");
-    return await response.json();
+    if (!res.ok) {
+      console.error("API error:", res.status, await res.text());
+      return { error: true };
+    }
+    return await res.json();
   } catch (err) {
-    console.error("POST ERROR:", err);
+    console.error("Network error:", err);
     return { error: true };
   }
 }
 
 // ---------------------------------------------------------------
-// INTERPRET → Populate the form
+// INTERPRET (free text → structured form)
 // ---------------------------------------------------------------
-async function runInterpret() {
-  const text = agentTextarea.value.trim();
+async function runInterpret(autoOptimize = false) {
+  const text = (agentInput?.value || "").trim();
   if (!text) return;
 
-  fillBtn.innerText = "Understanding your trip…";
-  fillBtn.disabled = true;
+  if (aiFillBtn) {
+    aiFillBtn.disabled = true;
+    aiFillBtn.textContent = "Understanding your trip…";
+  }
+  if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = true;
 
-  const result = await postJSON(`${API_BASE}/interpret`, { text });
+  const result = await postJSON("/interpret", { text });
 
-  fillBtn.innerText = "Let AI fill this form";
-  fillBtn.disabled = false;
+  if (aiFillBtn) {
+    aiFillBtn.disabled = false;
+    aiFillBtn.textContent = "AI fill form";
+  }
+  if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = false;
 
   if (result.error) {
-    alert("AI could not understand the request. Try rephrasing?");
+    alert("I couldn’t quite understand that. Please try rephrasing.");
     return;
   }
 
-  // Fill form fields
+  // Map backend fields → form DOM
   originInput.value = result.origin || "";
   destinationInput.value = result.destination || "";
-  windowInput.value = result.window || "";
+  datesInput.value = result.datesWindow || "";
   travellersInput.value = result.travellers || "";
   preferencesInput.value = result.preferences || "";
   notesInput.value = result.notes || "";
 
-  // Immediately optimize after interpret (Option C default)
-  runOptimize();
+  showRoutingUpdated(autoOptimize ? "Trip understood. Optimizing now…" : "Trip understood. Ready to optimize.");
+
+  if (autoOptimize) {
+    await runOptimize();
+  }
 }
 
-// Manual button for interpret
-fillBtn?.addEventListener("click", runInterpret);
+// Button: AI fill only
+aiFillBtn?.addEventListener("click", () => runInterpret(false));
+
+// Button: AI fill + optimize
+aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 
 // ---------------------------------------------------------------
-// OPTIMIZE → Generate Recap, Options, Risk Radar
+// VOICE INPUT — SIMPLE BASELINE
+// ---------------------------------------------------------------
+let recognition = null;
+
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = "en-US";
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onstart = () => {
+    if (agentBox) agentBox.classList.add("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Listening…";
+  };
+
+  recognition.onend = () => {
+    if (agentBox) agentBox.classList.remove("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+  };
+
+  recognition.onerror = () => {
+    if (agentBox) agentBox.classList.remove("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = Array.from(event.results)
+      .map(r => r[0].transcript)
+      .join(" ");
+    if (agentInput) agentInput.value = transcript.trim();
+    // For drive-mode UX, we interpret + optimize automatically
+    runInterpret(true);
+  };
+}
+
+voiceBtn?.addEventListener("click", () => {
+  if (!recognition) {
+    alert("Voice input is not supported in this browser.");
+    return;
+  }
+  recognition.start();
+});
+
+// ---------------------------------------------------------------
+// OPTIMIZE — form → backend → RHS
 // ---------------------------------------------------------------
 async function runOptimize() {
   const origin = originInput.value.trim();
@@ -132,59 +251,207 @@ async function runOptimize() {
     return;
   }
 
-  optimizeBtn.innerText = "Optimizing route…";
+  const datesWindow = datesInput.value.trim();
+  const travellers = travellersInput.value.trim();
+  const preferences = preferencesInput.value.trim();
+  const notes = notesInput.value.trim();
+  const outputStyle =
+    (outputStyleSelect.value || "Executive summary (C-suite / family office)").trim();
+
   optimizeBtn.disabled = true;
+  optimizeBtn.textContent = "Optimizing route…";
+
+  // Optionally save profile
+  if (rememberProfileCheckbox?.checked) {
+    saveProfile();
+  }
 
   const payload = {
     origin,
     destination,
-    window: windowInput.value.trim(),
-    travellers: travellersInput.value.trim(),
-    preferences: preferencesInput.value.trim(),
-    notes: notesInput.value.trim(),
+    datesWindow,
+    travellers,
+    preferences,
+    outputStyle,
+    notes
   };
 
-  const result = await postJSON(`${API_BASE}/optimize`, payload);
+  const result = await postJSON("/optimize", payload);
 
-  optimizeBtn.innerText = "Optimize";
   optimizeBtn.disabled = false;
+  optimizeBtn.textContent = "Optimize route ✈️";
 
   if (result.error) {
-    recapContent.innerHTML = `<p class="placeholder">AI could not optimize. Try again.</p>`;
+    alert("I couldn’t optimize this route. Please try again.");
     return;
   }
 
-  // Write RHS sections
-  recapContent.innerHTML = formatList(result.recap || []);
-  optionsContent.innerHTML = formatRoutingBlocks(result.options || []);
-  riskContent.innerHTML = formatList(result.risk || []);
+  renderResults(result);
+  showRoutingUpdated("Routing updated just now.");
+
+  if (playRecapCheckbox?.checked) {
+    speakSummary(result);
+  }
 }
 
-// Manual button for optimize
 optimizeBtn?.addEventListener("click", runOptimize);
 
 // ---------------------------------------------------------------
-// Render helpers
+// RENDER RESULTS (RHS)
 // ---------------------------------------------------------------
-function formatList(items) {
-  if (!items.length) return `<p class="placeholder">No details.</p>`;
-  return `<ul class="results-list">${items.map(li => `<li>${li}</li>`).join("")}</ul>`;
+function renderResults(data) {
+  const execRecapBullets = Array.isArray(data.execRecapBullets)
+    ? data.execRecapBullets
+    : [];
+  const routingOptions = Array.isArray(data.routingOptions)
+    ? data.routingOptions
+    : [];
+  const riskRadarBullets = Array.isArray(data.riskRadarBullets)
+    ? data.riskRadarBullets
+    : [];
+
+  // Recap
+  recapList.innerHTML = "";
+  if (!execRecapBullets.length) {
+    recapList.innerHTML = "<li>No recap returned.</li>";
+  } else {
+    execRecapBullets.forEach((b) => {
+      const li = document.createElement("li");
+      li.textContent = b;
+      recapList.appendChild(li);
+    });
+  }
+
+  // Options
+  optionsContainer.innerHTML = "";
+  if (!routingOptions.length) {
+    optionsContainer.innerHTML = '<div class="placeholder">No routing options returned.</div>';
+  } else {
+    routingOptions.forEach((opt) => {
+      const block = document.createElement("div");
+      block.className = "option-block";
+
+      const title = document.createElement("div");
+      title.className = "option-title";
+      title.textContent = opt.title || "Option";
+      block.appendChild(title);
+
+      const ul = document.createElement("ul");
+      ul.className = "option-bullets";
+      (opt.bullets || []).forEach((b) => {
+        const li = document.createElement("li");
+        li.textContent = b;
+        ul.appendChild(li);
+      });
+      block.appendChild(ul);
+
+      optionsContainer.appendChild(block);
+    });
+  }
+
+  // Risk
+  riskList.innerHTML = "";
+  if (!riskRadarBullets.length) {
+    riskList.innerHTML = "<li>No risk details returned.</li>";
+  } else {
+    riskRadarBullets.forEach((b) => {
+      const li = document.createElement("li");
+      li.textContent = b;
+      riskList.appendChild(li);
+    });
+  }
+
+  // Risk level pill
+  setRiskLevel(data.riskLevel || "Medium");
 }
 
-function formatRoutingBlocks(options) {
-  if (!options.length)
-    return `<p class="placeholder">No routing options provided.</p>`;
+// ---------------------------------------------------------------
+// SPEAK SUMMARY (simple baseline for now)
+// ---------------------------------------------------------------
+function speakSummary(data) {
+  if (!("speechSynthesis" in window)) return;
 
-  return options
-    .map(
-      (opt) => `
-      <div class="option-block">
-        <div class="option-title">${opt.title}</div>
-        <ul class="option-bullets">
-          ${opt.bullets.map((b) => `<li>${b}</li>`).join("")}
-        </ul>
-      </div>
-    `
-    )
-    .join("");
+  const execBullets = Array.isArray(data.execRecapBullets)
+    ? data.execRecapBullets
+    : [];
+  const routingOptions = Array.isArray(data.routingOptions)
+    ? data.routingOptions
+    : [];
+
+  const topRecap = execBullets.slice(0, 2).join(". ");
+  const bestOption = routingOptions[0]?.title || "";
+  const altOption = routingOptions[1]?.title || "";
+  const risk = data.riskLevel || "Medium";
+
+  let summary = "Here is your optimized family routing. ";
+  if (topRecap) summary += topRecap + ". ";
+  if (bestOption) summary += "Best option: " + bestOption + ". ";
+  if (altOption) summary += "Alternate option: " + altOption + ". ";
+  summary += "Overall risk level: " + risk + ".";
+
+  const utterance = new SpeechSynthesisUtterance(summary);
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utterance);
 }
+
+// ---------------------------------------------------------------
+// SAMPLE + PROFILE
+// ---------------------------------------------------------------
+sampleBtn?.addEventListener("click", () => {
+  originInput.value = "Calgary (YYC)";
+  destinationInput.value = "London (LHR)";
+  datesInput.value = "Mid-July, flexible ±2 days";
+  travellersInput.value = "2 adults, 2 kids";
+  preferencesInput.value = "1 stop, layover under 4 hours, daytime flights";
+  outputStyleSelect.value = "Executive summary (C-suite / family office)";
+  notesInput.value = "Kids are 8 and 10; prefer calm connections.";
+  showRoutingUpdated("Sample trip loaded. Ready to optimize.");
+});
+
+function saveProfile() {
+  try {
+    const profile = {
+      origin: originInput.value,
+      destination: destinationInput.value,
+      datesWindow: datesInput.value,
+      travellers: travellersInput.value,
+      preferences: preferencesInput.value,
+      outputStyle: outputStyleSelect.value,
+      notes: notesInput.value
+    };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch (err) {
+    console.error("Error saving profile", err);
+  }
+}
+
+loadProfileBtn?.addEventListener("click", () => {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) {
+      alert("No saved family profile yet.");
+      return;
+    }
+    const profile = JSON.parse(raw);
+    originInput.value = profile.origin || "";
+    destinationInput.value = profile.destination || "";
+    datesInput.value = profile.datesWindow || "";
+    travellersInput.value = profile.travellers || "";
+    preferencesInput.value = profile.preferences || "";
+    outputStyleSelect.value = profile.outputStyle || "";
+    notesInput.value = profile.notes || "";
+    showRoutingUpdated("Saved family profile loaded.");
+  } catch (err) {
+    console.error("Error loading profile", err);
+  }
+});
+
+// ---------------------------------------------------------------
+// DRIVE MODE (visual only for now)
+// ---------------------------------------------------------------
+driveToggle?.addEventListener("click", () => {
+  const isActive = driveToggle.classList.toggle("drive-switch-active");
+  document.body.classList.toggle("drive-mode", isActive);
+});
