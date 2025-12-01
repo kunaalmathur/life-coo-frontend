@@ -3,21 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Life COO – Travel Routing Optimizer</title>
+  <title>Life COO · Travel Concierge</title>
 
+  <!-- Styles -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Google Material Icons -->
+  <!-- Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-
 </head>
+
 <body>
+
   <div class="page-shell">
 
+    <!-- HEADER ------------------------------------------------------------ -->
     <header class="app-header">
       <div class="header-left">
-        <h1>LIFE COO — TRAVEL ROUTING OPTIMIZER ✈️</h1>
-        <div class="badge">AI concierge prototype · v0.4 · Agent-assisted + Voice</div>
+        <h1 class="brand-title">LIFE COO — TRAVEL CONCIERGE ✈️</h1>
+        <div class="badge">Ultra-luxury concierge experience · v0.5 · Voice + AI</div>
       </div>
 
       <div class="header-right">
@@ -30,41 +33,52 @@
       </div>
     </header>
 
+    <!-- LAYOUT ------------------------------------------------------------- -->
     <div class="layout">
 
-      <!-- LEFT PANEL -->
+      <!-- LEFT PANEL ------------------------------------------------------- -->
       <div class="panel panel-left">
-        <h2 class="panel-title">Trip Request</h2>
-        <p class="panel-subtitle">Speak in natural language or fill the form. The Life COO will do the rest.</p>
 
+        <h2 class="panel-title">Trip Request</h2>
+        <p class="panel-subtitle">Describe your trip in natural language — or fill the form below.</p>
+
+        <!-- Agent Box -->
         <div id="agentBox" class="agent-box">
+
           <div class="agent-box-header">
-            <div class="agent-title">Talk to your Life COO</div>
-            <div class="agent-subtitle">Optional — AI or voice will pre-fill the form.</div>
+            <div>
+              <div class="agent-title">Your AI Travel COO</div>
+              <div class="agent-subtitle">Speak freely. Your COO will understand and prepare everything.</div>
+            </div>
           </div>
 
-          <textarea id="agentInput" class="agent-textarea"
-            placeholder="Example: We are a family of 5 with a senior and 2 kids, planning a January 2026 trip from Calgary to Melbourne during the Australian Open, 1 stop, layovers under 4 hours…"></textarea>
+          <textarea 
+            id="agentInput" 
+            class="agent-textarea"
+            placeholder="Example:
+We are a family of 5 including a senior 80+ and two kids, traveling from Calgary to Melbourne during the Australian Open (Jan 2026), one stop, layovers under 4 hours…"
+          ></textarea>
 
           <div class="agent-actions">
             <button id="voiceBtn" class="btn-secondary btn-voice">Tap to speak</button>
             <button id="aiFillBtn" class="btn-secondary">AI fill form</button>
-            <button id="aiFillOptimizeBtn" class="btn-primary">Got it. Pre-filling and optimizing your route…</button>
+            <button id="aiFillOptimizeBtn" class="btn-primary">AI fill + optimize ✨</button>
           </div>
+
         </div>
 
-        <!-- FORM BELOW -->
+        <!-- FORM ----------------------------------------------------------- -->
         <div class="form-grid">
 
           <div class="form-row">
             <div class="field">
               <label>Origin</label>
-              <input id="origin" list="airportList" class="input" />
+              <input id="origin" list="airportList" class="input" placeholder="Calgary (YYC)" />
             </div>
 
             <div class="field">
               <label>Destination</label>
-              <input id="destination" list="airportList" class="input" />
+              <input id="destination" list="airportList" class="input" placeholder="Melbourne (MEL)" />
             </div>
           </div>
 
@@ -73,19 +87,19 @@
           <div class="form-row">
             <div class="field">
               <label>Dates / window</label>
-              <input id="dates" class="input" />
+              <input id="dates" class="input" placeholder="January 2026, Australian Open" />
             </div>
 
             <div class="field">
               <label>Travellers</label>
-              <input id="travellers" class="input" />
+              <input id="travellers" class="input" placeholder="5 incl. senior, 2 kids" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="field">
               <label>Preferences / constraints</label>
-              <input id="preferences" class="input" />
+              <input id="preferences" class="input" placeholder="1 stop · layover under 4 hrs" />
             </div>
 
             <div class="field">
@@ -102,19 +116,19 @@
           <div class="form-row">
             <div class="field field-full">
               <label>Optional notes / context</label>
-              <textarea id="notes" class="textarea"></textarea>
+              <textarea id="notes" class="textarea" placeholder="Any special care, seating, mobility or airline preferences…"></textarea>
             </div>
           </div>
 
           <div class="sample-row">
-            <button id="sampleBtn" class="btn-chip">Sample Calgary → London trip</button>
-            <div id="routingUpdated" class="status-pill status-pill-muted hidden">Routing options updated just now.</div>
+            <button id="sampleBtn" class="btn-chip">Load sample Calgary → London trip</button>
+            <div id="routingUpdated" class="status-pill status-pill-muted hidden">Routing updated</div>
           </div>
 
           <div class="profile-row">
             <label class="checkbox-label">
               <input type="checkbox" id="rememberProfile" />
-              Remember this as my default family profile
+              Remember as my family profile
             </label>
             <button id="loadProfileBtn" class="link-button">Load saved profile</button>
           </div>
@@ -126,19 +140,20 @@
           <div class="secondary-optimize-row">
             <label class="checkbox-label">
               <input type="checkbox" id="playRecap" />
-              Play recap after optimize
+              Play recap automatically after optimize
             </label>
           </div>
 
         </div>
       </div>
 
-      <!-- RIGHT PANEL ------------------------------------------------- -->
+      <!-- RIGHT PANEL ----------------------------------------------------- -->
       <div class="panel panel-right">
+
         <div class="results-header">
-          <div class="results-header-left">
-            <h2 class="panel-title">Optimized Routing Result</h2>
-            <p class="panel-subtitle">Executive recap on top; prioritized options and Risk Radar below.</p>
+          <div>
+            <h2 class="panel-title">Optimized Route</h2>
+            <p class="panel-subtitle">Executive recap · Best route options · Risk Radar</p>
           </div>
 
           <div class="results-header-right">
@@ -151,28 +166,36 @@
           </div>
         </div>
 
-        <!-- Results -->
+        <!-- EXECUTIVE RECAP -->
         <div class="results-section">
           <h3 class="results-title">Executive Recap</h3>
-          <ul id="recapList" class="results-list"><li>No executive recap returned.</li></ul>
+          <ul id="recapList" class="results-list">
+            <li>No recap yet.</li>
+          </ul>
         </div>
 
+        <!-- ROUTING OPTIONS -->
         <div class="results-section">
           <h3 class="results-title">Routing Options</h3>
           <div id="optionsContainer" class="routing-options">
-            <div class="placeholder">No routing options returned.</div>
+            <div class="placeholder">No routing options yet.</div>
           </div>
         </div>
 
+        <!-- RISK RADAR -->
         <div class="results-section">
           <h3 class="results-title">Risk Radar</h3>
-          <ul id="riskList" class="results-list"><li>No risk information returned.</li></ul>
+          <ul id="riskList" class="results-list">
+            <li>No risk details yet.</li>
+          </ul>
         </div>
 
       </div>
     </div>
   </div>
 
+  <!-- App Logic -->
   <script src="app.js"></script>
+
 </body>
 </html>
