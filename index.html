@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Life COO – Travel Routing Optimizer</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Google Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+</head>
+<body>
+  <div class="page-shell">
+
+    <header class="app-header">
+      <div class="header-left">
+        <h1>LIFE COO — TRAVEL ROUTING OPTIMIZER ✈️</h1>
+        <div class="badge">AI concierge prototype · v0.4 · Agent-assisted + Voice</div>
+      </div>
+
+      <div class="header-right">
+        <div class="drive-toggle-wrapper">
+          <span>Drive mode</span>
+          <div id="driveToggle" class="drive-switch">
+            <div class="drive-thumb"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <!-- LEFT PANEL -->
+      <div class="panel panel-left">
+        <h2 class="panel-title">Trip Request</h2>
+        <p class="panel-subtitle">Speak in natural language or fill the form. The Life COO will do the rest.</p>
+
+        <div id="agentBox" class="agent-box">
+          <div class="agent-box-header">
+            <div class="agent-title">Talk to your Life COO</div>
+            <div class="agent-subtitle">Optional — AI or voice will pre-fill the form.</div>
+          </div>
+
+          <textarea id="agentInput" class="agent-textarea"
+            placeholder="Example: We are a family of 5 with a senior and 2 kids, planning a January 2026 trip from Calgary to Melbourne during the Australian Open, 1 stop, layovers under 4 hours…"></textarea>
+
+          <div class="agent-actions">
+            <button id="voiceBtn" class="btn-secondary btn-voice">Tap to speak</button>
+            <button id="aiFillBtn" class="btn-secondary">AI fill form</button>
+            <button id="aiFillOptimizeBtn" class="btn-primary">Got it. Pre-filling and optimizing your route…</button>
+          </div>
+        </div>
+
+        <!-- FORM BELOW -->
+        <div class="form-grid">
+
+          <div class="form-row">
+            <div class="field">
+              <label>Origin</label>
+              <input id="origin" list="airportList" class="input" />
+            </div>
+
+            <div class="field">
+              <label>Destination</label>
+              <input id="destination" list="airportList" class="input" />
+            </div>
+          </div>
+
+          <datalist id="airportList"></datalist>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Dates / window</label>
+              <input id="dates" class="input" />
+            </div>
+
+            <div class="field">
+              <label>Travellers</label>
+              <input id="travellers" class="input" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field">
+              <label>Preferences / constraints</label>
+              <input id="preferences" class="input" />
+            </div>
+
+            <div class="field">
+              <label>Output style</label>
+              <select id="outputStyle" class="input">
+                <option value="">Select…</option>
+                <option>Executive summary (C-suite / family office)</option>
+                <option>Detailed itinerary</option>
+                <option>Ultra-luxury concierge brief</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="field field-full">
+              <label>Optional notes / context</label>
+              <textarea id="notes" class="textarea"></textarea>
+            </div>
+          </div>
+
+          <div class="sample-row">
+            <button id="sampleBtn" class="btn-chip">Sample Calgary → London trip</button>
+            <div id="routingUpdated" class="status-pill status-pill-muted hidden">Routing options updated just now.</div>
+          </div>
+
+          <div class="profile-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="rememberProfile" />
+              Remember this as my default family profile
+            </label>
+            <button id="loadProfileBtn" class="link-button">Load saved profile</button>
+          </div>
+
+          <div class="optimize-row">
+            <button id="optimizeBtn" class="btn-primary btn-plane">Optimize route ✈️</button>
+          </div>
+
+          <div class="secondary-optimize-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="playRecap" />
+              Play recap after optimize
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL ------------------------------------------------- -->
+      <div class="panel panel-right">
+        <div class="results-header">
+          <div class="results-header-left">
+            <h2 class="panel-title">Optimized Routing Result</h2>
+            <p class="panel-subtitle">Executive recap on top; prioritized options and Risk Radar below.</p>
+          </div>
+
+          <div class="results-header-right">
+            <div class="risk-controls">
+              <span>Risk:</span>
+              <div id="riskLow" class="pill pill-risk-low">Low</div>
+              <div id="riskMedium" class="pill pill-risk-medium">Medium</div>
+              <div id="riskHigh" class="pill pill-risk-high">High</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-section">
+          <h3 class="results-title">Executive Recap</h3>
+          <ul id="recapList" class="results-list"><li>No executive recap returned.</li></ul>
+        </div>
+
+        <div class="results-section">
+          <h3 class="results-title">Routing Options</h3>
+          <div id="optionsContainer" class="routing-options">
+            <div class="placeholder">No routing options returned.</div>
+          </div>
+        </div>
+
+        <div class="results-section">
+          <h3 class="results-title">Risk Radar</h3>
+          <ul id="riskList" class="results-list"><li>No risk information returned.</li></ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
