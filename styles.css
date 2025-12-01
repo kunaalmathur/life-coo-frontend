@@ -1,1 +1,416 @@
+/* -------------------------------------------------------------
+   LIFE COO — ULTRA LUXURY CONCIERGE EDITION
+   Global variables, glass panels, luxury gradients, modern UI
+-------------------------------------------------------------- */
+
+:root {
+  --bg: #020617;
+  --glass: rgba(17, 24, 39, 0.72);
+  --glass-strong: rgba(17, 24, 39, 0.88);
+  --glass-border: rgba(148, 163, 184, 0.18);
+
+  --accent: #38bdf8;
+  --accent-strong: #60a5fa;
+  --accent-fade: rgba(56, 189, 248, 0.15);
+  --accent-glow: rgba(56, 189, 248, 0.55);
+
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #fb7185;
+
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --shadow-soft: 0 25px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* -------------------------------------------------------------
+   GLOBAL RESET
+-------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "SF Pro Text", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #0f172a 0%, #000 60%, #020617 100%);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-shell {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 24px 18px 40px;
+}
+
+/* -------------------------------------------------------------
+   HEADER
+-------------------------------------------------------------- */
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.brand-title {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #22c55e22, #38bdf822);
+  color: #bbf7d0;
+  border: 1px solid rgba(34, 197, 94, 0.42);
+}
+
+/* DRIVE MODE TOGGLE ----------------------------------------------------- */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.drive-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.drive-switch {
+  width: 46px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: all 0.25s ease;
+}
+
+.drive-switch-active {
+  background: rgba(56, 189, 248, 0.35);
+  border-color: rgba(56, 189, 248, 0.75);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.drive-thumb {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
+  border-radius: 999px;
+  position: absolute;
+  left: 3px;
+  transition: transform 0.25s ease;
+}
+
+.drive-switch-active .drive-thumb {
+  transform: translateX(22px);
+}
+
+/* -------------------------------------------------------------
+   LAYOUT
+-------------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 22px;
+}
+
+/* -------------------------------------------------------------
+   PANELS (GLASS EFFECT)
+-------------------------------------------------------------- */
+
+.panel {
+  background: var(--glass-strong);
+  border-radius: var(--radius-xl);
+  padding: 22px 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(14px);
+  position: relative;
+  box-shadow: var(--shadow-soft);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(at top left, rgba(56,189,248,0.14), transparent 70%);
+  pointer-events: none;
+}
+
+.panel-left::before {
+  background: radial-gradient(at top left, rgba(56,189,248,0.19), transparent 70%);
+}
+
+.panel-right::before {
+  background: radial-gradient(at top right, rgba(30,64,175,0.28), transparent 70%);
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* -------------------------------------------------------------
+   PANEL TITLES
+-------------------------------------------------------------- */
+
+.panel-title {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  color: #cbd5f5;
+}
+
+.panel-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* -------------------------------------------------------------
+   AGENT BOX
+-------------------------------------------------------------- */
+
+.agent-box {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.agent-textarea {
+  width: 100%;
+  min-height: 120px;
+  border-radius: 14px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-main);
+  padding: 12px;
+  resize: vertical;
+  outline: none;
+  font-size: 13px;
+}
+
+.agent-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* BUTTONS --------------------------------------------------------------- */
+
+button {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-primary {
+  background: radial-gradient(circle at 0% 0%, #f97316, #ea580c);
+  color: #111827;
+  border: 1px solid rgba(248, 113, 22, 0.75);
+  box-shadow: 0 12px 28px rgba(248, 113, 22, 0.48);
+}
+
+.btn-secondary {
+  background: rgba(0,0,0,0.32);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-main);
+}
+
+.btn-voice {
+  border-color: rgba(56,189,248,0.9);
+}
+
+.btn-chip {
+  padding: 6px 12px;
+  font-size: 11px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(56,189,248,0.25);
+  border-radius: 999px;
+}
+
+/* INPUTS --------------------------------------------------------------- */
+
+.input,
+.textarea {
+  width: 100%;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.32);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-main);
+  font-size: 12px;
+  outline: none;
+}
+
+.textarea {
+  border-radius: 14px;
+  min-height: 80px;
+}
+
+/* FORM GRID ------------------------------------------------------------- */
+
+.form-grid {
+  background: rgba(0,0,0,0.28);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(56,189,248,0.18);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-full {
+  grid-column: span 2;
+}
+
+/* RESULTS --------------------------------------------------------------- */
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.results-header-right {
+  display: flex;
+  gap: 6px;
+}
+
+.pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.pill-risk-low {
+  background: rgba(22,163,74,0.15);
+  color: #bbf7d0;
+}
+
+.pill-risk-medium {
+  background: rgba(234,179,8,0.15);
+  color: #facc15;
+}
+
+.pill-risk-high {
+  background: rgba(239,68,68,0.15);
+  color: #fecaca;
+}
+
+/* RECAP / OPTIONS / RISK ------------------------------------------------ */
+
+.results-section {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+
+.results-title {
+  margin: 0 0 6px;
+  letter-spacing: 0.1em;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.results-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.results-list li + li {
+  margin-top: 4px;
+}
+
+.routing-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.option-block {
+  background: rgba(0,0,0,0.32);
+  border-radius: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(56,189,248,0.28);
+}
+
+.option-title {
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(56,189,248,0.28);
+}
+
+.placeholder {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* -------------------------------------------------------------
+   RESPONSIVE
+-------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 
