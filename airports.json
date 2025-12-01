@@ -1,1 +1,42 @@
+[
+  { "code": "YYC", "city": "Calgary", "name": "Calgary International Airport" },
+  { "code": "YVR", "city": "Vancouver", "name": "Vancouver International Airport" },
+  { "code": "YYZ", "city": "Toronto", "name": "Toronto Pearson International Airport" },
+  { "code": "YUL", "city": "Montreal", "name": "Montréal–Trudeau International Airport" },
+  { "code": "YEG", "city": "Edmonton", "name": "Edmonton International Airport" },
+  { "code": "YWG", "city": "Winnipeg", "name": "Winnipeg James Armstrong Richardson Airport" },
+
+  { "code": "SEA", "city": "Seattle", "name": "Seattle–Tacoma International Airport" },
+  { "code": "SFO", "city": "San Francisco", "name": "San Francisco International Airport" },
+  { "code": "LAX", "city": "Los Angeles", "name": "Los Angeles International Airport" },
+  { "code": "JFK", "city": "New York", "name": "John F. Kennedy International Airport" },
+  { "code": "EWR", "city": "Newark", "name": "Newark Liberty International Airport" },
+  { "code": "ORD", "city": "Chicago", "name": "O'Hare International Airport" },
+  { "code": "DFW", "city": "Dallas", "name": "Dallas/Fort Worth International Airport" },
+  { "code": "MIA", "city": "Miami", "name": "Miami International Airport" },
+
+  { "code": "LHR", "city": "London", "name": "London Heathrow Airport" },
+  { "code": "LGW", "city": "London", "name": "London Gatwick Airport" },
+  { "code": "CDG", "city": "Paris", "name": "Charles de Gaulle Airport" },
+  { "code": "AMS", "city": "Amsterdam", "name": "Amsterdam Schiphol Airport" },
+  { "code": "FRA", "city": "Frankfurt", "name": "Frankfurt Airport" },
+  { "code": "MAD", "city": "Madrid", "name": "Adolfo Suárez Madrid–Barajas Airport" },
+
+  { "code": "DXB", "city": "Dubai", "name": "Dubai International Airport" },
+  { "code": "DOH", "city": "Doha", "name": "Hamad International Airport" },
+
+  { "code": "DEL", "city": "New Delhi", "name": "Indira Gandhi International Airport" },
+  { "code": "BOM", "city": "Mumbai", "name": "Chhatrapati Shivaji Maharaj International Airport" },
+  { "code": "BLR", "city": "Bangalore", "name": "Kempegowda International Airport" },
+  { "code": "MAA", "city": "Chennai", "name": "Chennai International Airport" },
+
+  { "code": "HKG", "city": "Hong Kong", "name": "Hong Kong International Airport" },
+  { "code": "SIN", "city": "Singapore", "name": "Singapore Changi Airport" },
+  { "code": "NRT", "city": "Tokyo", "name": "Narita International Airport" },
+  { "code": "HND", "city": "Tokyo", "name": "Haneda Airport" },
+  { "code": "ICN", "city": "Seoul", "name": "Incheon International Airport" },
+
+  { "code": "SYD", "city": "Sydney", "name": "Sydney Kingsford Smith Airport" },
+  { "code": "MEL", "city": "Melbourne", "name": "Melbourne Airport" }
+]
 
