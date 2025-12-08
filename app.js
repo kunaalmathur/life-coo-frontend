@@ -433,10 +433,13 @@ function renderResults(data) {
 }
 
 // ---------------------------------------------------------------
-// SPEAK SUMMARY (simple baseline for now)
+// SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
 function speakSummary(data) {
   if (!("speechSynthesis" in window)) return;
+
+  // Stop any previous speech so we don't overlap
+  window.speechSynthesis.cancel();
 
   const execBullets = Array.isArray(data.execRecapBullets)
     ? data.execRecapBullets
@@ -444,22 +447,61 @@ function speakSummary(data) {
   const routingOptions = Array.isArray(data.routingOptions)
     ? data.routingOptions
     : [];
+  const riskRadarBullets = Array.isArray(data.riskRadarBullets)
+    ? data.riskRadarBullets
+    : [];
 
-  const topRecap = execBullets.slice(0, 2).join(". ");
-  const bestOption = routingOptions[0]?.title || "";
-  const altOption = routingOptions[1]?.title || "";
+  const pieces = [];
+
+  // 1) Top recap (first 2 bullets)
+  if (execBullets.length) {
+    pieces.push(execBullets.slice(0, 2).join(". "));
+  }
+
+  // 2) Best option (title + first 1–2 bullets)
+  if (routingOptions[0]) {
+    const opt = routingOptions[0];
+    const optBullets = Array.isArray(opt.bullets) ? opt.bullets : [];
+    let optText = opt.title || "Best option";
+    if (optBullets.length) {
+      optText += ". " + optBullets.slice(0, 2).join(". ");
+    }
+    pieces.push("Best option: " + optText);
+  }
+
+  // 3) Alternate option (optional)
+  if (routingOptions[1]) {
+    const alt = routingOptions[1];
+    const altBullets = Array.isArray(alt.bullets) ? alt.bullets : [];
+    let altText = alt.title || "Alternate option";
+    if (altBullets.length) {
+      altText += ". " + altBullets.slice(0, 2).join(". ");
+    }
+    pieces.push("Alternate option: " + altText);
+  }
+
+  // 4) Risk level + key risks
   const risk = data.riskLevel || "Medium";
+  pieces.push("Overall risk level: " + risk + ".");
 
-  let summary = "Here is your optimized family routing. ";
-  if (topRecap) summary += topRecap + ". ";
-  if (bestOption) summary += "Best option: " + bestOption + ". ";
-  if (altOption) summary += "Alternate option: " + altOption + ". ";
-  summary += "Overall risk level: " + risk + ".";
+  if (riskRadarBullets.length) {
+    pieces.push("Key risks: " + riskRadarBullets.slice(0, 3).join(". "));
+  }
+
+  // Join and clean the text so it sounds natural
+  let summary = pieces.join(". ");
+
+  summary = summary
+    .replace(/[\r\n]+/g, " ")   // newlines -> spaces
+    .replace(/\s+/g, " ")       // collapse spaces
+    .replace(/\.\s*\./g, ".")   // remove duplicated dots
+    .trim();
 
   const utterance = new SpeechSynthesisUtterance(summary);
-  utterance.rate = 1.0;
+  utterance.lang = "en-US";
+  utterance.rate = 0.98;  // slightly slower, warmer
   utterance.pitch = 1.0;
-  window.speechSynthesis.cancel();
+
   window.speechSynthesis.speak(utterance);
 }
 
