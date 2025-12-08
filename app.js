@@ -194,119 +194,115 @@ aiFillBtn?.addEventListener("click", () => runInterpret(false));
 // Button: AI fill + optimize
 aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 
-// ==== VOICE RECOGNITION v2 (Streaming + sane pause) ====
-
-// Cache DOM references (adjust IDs if yours are different)
-const agentTextarea = document.getElementById('agent-textarea');      // agent prompt box
-const tapToSpeakBtn = document.getElementById('tap-to-speak-btn');   // mic button
-
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition;
-let speechFinalTranscript = '';
+// ---------------------------------------------------------------
+// VOICE INPUT — STREAMING + SANE PAUSE
+// ---------------------------------------------------------------
+let recognition = null;
+let speechFinalTranscript = "";
 let speechSilenceTimeout = null;
 
-if (SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
+if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SR();
+  recognition.lang = "en-US";
+
+  // ✅ KEY CHANGES
   recognition.continuous = true;       // keep listening across small pauses
-  recognition.interimResults = true;   // stream text as you speak
-} else {
-  console.warn('SpeechRecognition is not supported in this browser.');
-}
+  recognition.interimResults = true;   // stream partial text as you speak
 
-// Starts the full voice flow when the user taps the mic
-function startVoiceFlow() {
-  if (!recognition) return;
+  recognition.onstart = () => {
+    if (agentBox) agentBox.classList.add("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Listening…";
+    if (agentInput) {
+      agentInput.placeholder = "Listening… speak naturally.";
+    }
+  };
 
-  speechFinalTranscript = '';
-  if (speechSilenceTimeout) {
-    clearTimeout(speechSilenceTimeout);
-    speechSilenceTimeout = null;
-  }
+  recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    if (agentBox) agentBox.classList.remove("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+    if (agentInput) {
+      agentInput.placeholder = "Describe your trip to your Travel COO…";
+    }
+    if (speechSilenceTimeout) {
+      clearTimeout(speechSilenceTimeout);
+      speechSilenceTimeout = null;
+    }
+  };
 
-  // UI state while listening
-  tapToSpeakBtn.disabled = true;
-  tapToSpeakBtn.textContent = 'Listening…';
-  agentTextarea.placeholder = 'Listening… speak naturally.';
-
-  recognition.start();
-}
-
-// Stream results as user speaks
-if (recognition) {
   recognition.onresult = (event) => {
-    let interimTranscript = '';
+    let interimTranscript = "";
 
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const result = event.results[i];
       const transcript = result[0].transcript;
 
       if (result.isFinal) {
-        speechFinalTranscript += transcript + ' ';
+        speechFinalTranscript += transcript + " ";
       } else {
-        interimTranscript += transcript + ' ';
+        interimTranscript += transcript + " ";
       }
     }
 
-    // LIVE text: final + interim so user sees it building
+    // ✅ LIVE STREAMING TEXT (final + interim)
     const combined = (speechFinalTranscript + interimTranscript).trim();
-    agentTextarea.value = combined;
+    if (agentInput) agentInput.value = combined;
 
-    // Reset silence timer on every result
+    // ✅ Reset silence timer on every result
     if (speechSilenceTimeout) {
       clearTimeout(speechSilenceTimeout);
     }
-    // If user is silent for 2 seconds, we stop & process
+    // If user is silent for 2 seconds, stop & process
     speechSilenceTimeout = setTimeout(() => {
       recognition.stop();
-    }, 2000);
-  };
-
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error:', event.error);
-    tapToSpeakBtn.disabled = false;
-    tapToSpeakBtn.textContent = 'Tap to speak';
-    agentTextarea.placeholder = 'Describe your trip to your Travel COO…';
+    }, 2000); // Increase to 2500–3000 if you want more breathing room
   };
 
   recognition.onend = () => {
-    // Stop the silence timer if still running
     if (speechSilenceTimeout) {
       clearTimeout(speechSilenceTimeout);
       speechSilenceTimeout = null;
     }
+    if (agentBox) agentBox.classList.remove("agent-box-active");
+    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+    if (agentInput && !agentInput.value) {
+      agentInput.placeholder = "Describe your trip to your Travel COO…";
+    }
 
-    tapToSpeakBtn.disabled = false;
-    tapToSpeakBtn.textContent = 'Tap to speak';
-    agentTextarea.placeholder = 'Describe your trip to your Travel COO…';
-
-    const finalText = agentTextarea.value.trim();
+    const finalText = agentInput ? agentInput.value.trim() : "";
     if (!finalText) {
-      // User didn’t say anything meaningful
+      // nothing captured, don’t call backend
       return;
     }
 
-    // ⬇️ IMPORTANT:
-    // Keep whatever function you were already calling for the agent text.
-    // If previously you called something like `runAgentFlow()` or
-    // triggered the "AI fill form + optimize" pipeline here, call the SAME function.
-    //
-    // Example (replace with your actual function):
-    if (typeof runAgentFlowFromText === 'function') {
-      runAgentFlowFromText(finalText);      // Your existing pipeline
-    } else if (typeof handleAgentSubmit === 'function') {
-      handleAgentSubmit(finalText);         // Or whatever you had
-    } else {
-      // Fallback: if you had inline code here previously, move that here.
-      console.warn('Hook up your existing interpret+optimize flow here.');
-    }
+    // 🔴 THIS IS THE CRITICAL LINE:
+    // Use your existing pipeline exactly as before
+    // This will call /interpret with agentInput.value, then /optimize
+    runInterpret(true);
   };
 }
 
-// Wire the mic button
-if (tapToSpeakBtn) {
-  tapToSpeakBtn.addEventListener('click', startVoiceFlow);
-}
+voiceBtn?.addEventListener("click", () => {
+  if (!recognition) {
+    alert("Voice input is not supported in this browser.");
+    return;
+  }
+
+  // reset state for a fresh capture
+  speechFinalTranscript = "";
+  if (speechSilenceTimeout) {
+    clearTimeout(speechSilenceTimeout);
+    speechSilenceTimeout = null;
+  }
+
+  if (agentInput) {
+    agentInput.value = "";
+    agentInput.placeholder = "Listening… speak naturally.";
+  }
+
+  recognition.start();
+});
 
 // ==== END VOICE RECOGNITION v2 ====
 
