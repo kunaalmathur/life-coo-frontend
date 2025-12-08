@@ -54,6 +54,9 @@ const airportListEl = document.getElementById("airportList");
 // Profile storage key
 const PROFILE_KEY = "lifeCooFamilyProfile_v1";
 
+// NEW: remember last optimize result globally
+let lastOptimizeResult = null;
+
 // ---------------------------------------------------------------
 // INIT
 // ---------------------------------------------------------------
@@ -345,20 +348,23 @@ async function runOptimize() {
 
   const result = await postJSON("/optimize", payload);
 
-  optimizeBtn.disabled = false;
-  optimizeBtn.textContent = "Optimize route ✈️";
+optimizeBtn.disabled = false;
+optimizeBtn.textContent = "Optimize route ✈️";
 
-  if (result.error) {
-    alert("I couldn’t optimize this route. Please try again.");
-    return;
-  }
+if (result.error) {
+  alert("I couldn’t optimize this route. Please try again.");
+  return;
+}
 
-  renderResults(result);
-  showRoutingUpdated("Routing updated just now.");
+// remember latest result for replay / late recap
+lastOptimizeResult = result;
 
-  if (playRecapCheckbox?.checked) {
-    speakSummary(result);
-  }
+renderResults(result);
+showRoutingUpdated("Routing updated just now.");
+
+if (playRecapCheckbox?.checked) {
+  speakSummary(result);
+   }
 }
 
 optimizeBtn?.addEventListener("click", runOptimize);
@@ -437,6 +443,9 @@ function renderResults(data) {
 // ---------------------------------------------------------------
 async function speakSummary(data) {
   try {
+    // UX: let the user know something is happening
+    showRoutingUpdated("Preparing your spoken recap…");
+
     const res = await fetch(`${API_BASE}/tts-recap`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -445,17 +454,28 @@ async function speakSummary(data) {
 
     if (!res.ok) {
       console.error("TTS recap error:", res.status, await res.text());
+      showRoutingUpdated("Could not play spoken recap.");
       return;
     }
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
+
+    audio.onplay = () => {
+      showRoutingUpdated("Playing spoken recap now.");
+    };
+    audio.onended = () => {
+      showRoutingUpdated("Routing updated just now.");
+    };
+
     audio.play();
   } catch (err) {
     console.error("Network error during TTS recap:", err);
+    showRoutingUpdated("Could not play spoken recap.");
   }
 }
+
 
 // ---------------------------------------------------------------
 // SAMPLE + PROFILE
@@ -506,6 +526,16 @@ loadProfileBtn?.addEventListener("click", () => {
     showRoutingUpdated("Saved family profile loaded.");
   } catch (err) {
     console.error("Error loading profile", err);
+  }
+});
+
+// ---------------------------------------------------------------
+// This makes it play immediately if you tick the box after a result is already on screen.
+// ---------------------------------------------------------------
+
+   playRecapCheckbox?.addEventListener("change", () => {
+  if (playRecapCheckbox.checked && lastOptimizeResult) {
+    speakSummary(lastOptimizeResult);
   }
 });
 
