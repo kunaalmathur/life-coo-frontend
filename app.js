@@ -60,6 +60,8 @@ let lastOptimizeResult = null;
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
 
+let speakToken = 0; // cancels older in-flight speakSummary calls
+
 // ---------------------------------------------------------------
 // INIT
 // ---------------------------------------------------------------
@@ -525,6 +527,7 @@ function renderResults(data) {
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
 async function speakSummary(data) {
+  const myToken = ++speakToken;
   try {
     // UX: let the user know something is happening
     showRoutingUpdated("Preparing your spoken recap…");
@@ -555,6 +558,13 @@ if (!res.ok) {
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
+
+   // If another speak started after this one, or recap got turned off, don't play.
+   if (myToken !== speakToken || !playRecapCheckbox?.checked) {
+      URL.revokeObjectURL(url);
+      return;
+   }
+
     const audio = new Audio(url);
 
     audio.onplay = () => {
@@ -640,10 +650,22 @@ loadProfileBtn?.addEventListener("click", () => {
 // ---------------------------------------------------------------
 
    playRecapCheckbox?.addEventListener("change", () => {
-  if (playRecapCheckbox.checked && lastOptimizeResult) {
+  // If user turns it OFF: stop audio + cancel any in-flight fetch
+  if (!playRecapCheckbox.checked) {
+     speakToken++; // cancels pending speakSummary responses
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio = null;
+    }
+    return;
+  }
+
+  // If user turns it ON: play latest recap (if available)
+  if (lastOptimizeResult) {
     speakSummary(lastOptimizeResult);
   }
 });
+
 
 // ---------------------------------------------------------------
 // DRIVE MODE (visual only for now)
