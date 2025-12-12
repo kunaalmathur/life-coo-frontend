@@ -414,10 +414,19 @@ async function runOptimize() {
     notes,
   };
 
-  const result = await postJSONWithRetry("/optimize", payload, {
-    maxRetries: 1,
-    timeoutMs: 15000,
+  // Cold-start immunity: fast attempt, then a masked retry
+let result = await postJSONWithRetry("/optimize", payload, {
+  maxRetries: 0,       // attempt 1 only
+  timeoutMs: 8000,     // fast fail for cold-starts
+});
+
+if (result.error) {
+  showRoutingUpdated("Waking up your concierge… one moment.");
+  result = await postJSONWithRetry("/optimize", payload, {
+    maxRetries: 0,     // attempt 2 only
+    timeoutMs: 15000,  // give it more time once warmed
   });
+}
 
   optimizeBtn.disabled = false;
   optimizeBtn.textContent = "Optimize route ✈️";
