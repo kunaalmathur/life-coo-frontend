@@ -57,6 +57,55 @@ const PROFILE_KEY = "lifeCooFamilyProfile_v1";
 // NEW: remember last optimize result globally
 let lastOptimizeResult = null;
 
+// ---------------------------------------------------------------
+// UI STATE (Upgrade 2 Step 2)
+// ---------------------------------------------------------------
+const UI_STATES = {
+  IDLE: "Idle",
+  LISTENING: "Listening",
+  UNDERSTANDING: "Understanding",
+  OPTIMIZING: "Optimizing",
+  SPEAKING: "Speaking",
+  ERROR: "Error",
+};
+
+let uiState = UI_STATES.IDLE;
+
+function setUIState(nextState, messageOverride = "") {
+  uiState = nextState;
+
+  // 1) Human-friendly status text
+  const defaultMessage =
+    nextState === UI_STATES.IDLE ? "Ready." :
+    nextState === UI_STATES.LISTENING ? "Listening…" :
+    nextState === UI_STATES.UNDERSTANDING ? "Understanding your trip…" :
+    nextState === UI_STATES.OPTIMIZING ? "Optimizing your routing…" :
+    nextState === UI_STATES.SPEAKING ? "Playing spoken recap…" :
+    "Something went wrong. Try again.";
+
+  showRoutingUpdated(messageOverride || defaultMessage);
+
+  // 2) Basic guardrails: prevent double clicks during “busy” states
+  const isBusy =
+    nextState === UI_STATES.LISTENING ||
+    nextState === UI_STATES.UNDERSTANDING ||
+    nextState === UI_STATES.OPTIMIZING ||
+    nextState === UI_STATES.SPEAKING;
+
+  if (optimizeBtn) optimizeBtn.disabled = isBusy;
+  if (aiFillBtn) aiFillBtn.disabled = isBusy;
+  if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = isBusy;
+
+  // Keep voice available unless browser doesn’t support it
+  if (voiceBtn) voiceBtn.disabled = false;
+
+  // 3) Button labels (tiny polish)
+  if (optimizeBtn) {
+    optimizeBtn.textContent =
+      nextState === UI_STATES.OPTIMIZING ? "Optimizing route…" : "Optimize route ✈️";
+  }
+}
+
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
 
@@ -228,6 +277,7 @@ async function postJSONWithRetry(path, body, options = {}) {
 async function runInterpret(autoOptimize = false) {
   const text = (agentInput?.value || "").trim();
   if (!text) return;
+   setUIState(UI_STATES.UNDERSTANDING);
 
   if (aiFillBtn) {
     aiFillBtn.disabled = true;
@@ -260,6 +310,8 @@ async function runInterpret(autoOptimize = false) {
 
   if (autoOptimize) {
     await runOptimize();
+    if (!autoOptimize) setUIState(UI_STATES.IDLE, "Trip understood. Ready to optimize.");
+
   }
 }
 
@@ -286,6 +338,7 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   recognition.interimResults = true;   // stream partial text as you speak
 
   recognition.onstart = () => {
+    setUIState(UI_STATES.LISTENING);
     if (agentBox) agentBox.classList.add("agent-box-active");
     if (voiceBtn) voiceBtn.textContent = "Listening…";
     if (agentInput) {
@@ -294,6 +347,7 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   };
 
   recognition.onerror = (event) => {
+    setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
     console.error("Speech recognition error:", event.error);
     if (agentBox) agentBox.classList.remove("agent-box-active");
     if (voiceBtn) voiceBtn.textContent = "Tap to speak";
@@ -346,10 +400,11 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
     }
 
     const finalText = agentInput ? agentInput.value.trim() : "";
-    if (!finalText) {
-      // nothing captured, don’t call backend
-      return;
+     if (!finalText) {
+      setUIState(UI_STATES.IDLE);
+     return;
     }
+      setUIState(UI_STATES.UNDERSTANDING);
 
     // 🔴 THIS IS THE CRITICAL LINE:
     // Use your existing pipeline exactly as before
@@ -385,6 +440,7 @@ voiceBtn?.addEventListener("click", () => {
 // OPTIMIZE — form → backend → RHS
 // ---------------------------------------------------------------
 async function runOptimize() {
+  setUIState(UI_STATES.OPTIMIZING);
   const origin = originInput.value.trim();
   const destination = destinationInput.value.trim();
 
@@ -527,6 +583,7 @@ function renderResults(data) {
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
 async function speakSummary(data) {
+  setUIState(UI_STATES.SPEAKING);
   const myToken = ++speakToken;
   try {
     // UX: let the user know something is happening
@@ -575,6 +632,7 @@ if (!res.ok) {
      showRoutingUpdated("Routing updated just now.");
      activeAudio = null;
      URL.revokeObjectURL(url); // 🧹 cleanup audio blob
+     setUIState(UI_STATES.IDLE, "Routing updated just now.");
     };
 
     audio.onerror = () => {
