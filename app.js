@@ -57,6 +57,9 @@ const PROFILE_KEY = "lifeCooFamilyProfile_v1";
 // NEW: remember last optimize result globally
 let lastOptimizeResult = null;
 
+// NEW: prevent overlapping recap audio
+let activeAudio = null;
+
 // ---------------------------------------------------------------
 // INIT
 // ---------------------------------------------------------------
@@ -555,11 +558,22 @@ if (!res.ok) {
     const audio = new Audio(url);
 
     audio.onplay = () => {
-      showRoutingUpdated("Playing spoken recap now.");
+     showRoutingUpdated("Playing spoken recap now.");
     };
     audio.onended = () => {
-      showRoutingUpdated("Routing updated just now.");
+     showRoutingUpdated("Routing updated just now.");
+     activeAudio = null;
     };
+
+   // Stop any previous recap audio (prevents overlap)
+    if (activeAudio) {
+     activeAudio.pause();
+     activeAudio = null;
+    }
+    activeAudio = audio;
+
+    audio.play();
+
 
     audio.play();
   } catch (err) {
