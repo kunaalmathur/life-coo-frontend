@@ -560,9 +560,11 @@ if (!res.ok) {
     audio.onplay = () => {
      showRoutingUpdated("Playing spoken recap now.");
     };
+
     audio.onended = () => {
      showRoutingUpdated("Routing updated just now.");
      activeAudio = null;
+     URL.revokeObjectURL(url); // 🧹 cleanup audio blob
     };
 
    // Stop any previous recap audio (prevents overlap)
@@ -574,8 +576,6 @@ if (!res.ok) {
 
     audio.play();
 
-
-    audio.play();
   } catch (err) {
     console.error("Network error during TTS recap:", err);
     showRoutingUpdated("Could not play spoken recap.");
