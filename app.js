@@ -397,6 +397,7 @@ async function runOptimize() {
 
   optimizeBtn.disabled = true;
   optimizeBtn.textContent = "Optimizing route…";
+  showRoutingUpdated("Optimizing your routing…");
 
   // Optionally save profile
   if (rememberProfileCheckbox?.checked) {
