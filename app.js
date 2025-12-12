@@ -150,6 +150,73 @@ async function postJSON(path, body) {
   }
 }
 
+// Helper: POST with a single silent retry + timeout
+async function postJSONWithRetry(path, body, options = {}) {
+  const {
+    maxRetries = 1,
+    timeoutMs = 15000, // 15s per attempt
+  } = options;
+
+  const url = `${API_BASE}${path}`;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const isServerError = res.status >= 500 && res.status < 600;
+
+        // retry only on 5xx
+        if (attempt < maxRetries && isServerError) {
+          console.warn(
+            `[postJSONWithRetry] Attempt ${attempt + 1} failed with ${res.status}, retrying...`
+          );
+          continue;
+        }
+
+        console.error(
+          "postJSONWithRetry final HTTP error:",
+          res.status,
+          await res.text()
+        );
+        return { error: true };
+      }
+
+      // 🎉 success
+      return await res.json();
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      const isAbortError = err.name === "AbortError";
+      const isNetworkError = err instanceof TypeError;
+
+      if (attempt < maxRetries && (isAbortError || isNetworkError)) {
+        console.warn(
+          `[postJSONWithRetry] Attempt ${attempt + 1} error, retrying...`,
+          err
+        );
+        continue;
+      }
+
+      console.error("postJSONWithRetry final error:", err);
+      return { error: true };
+    }
+  }
+
+  // Fallback (shouldn’t really hit)
+  return { error: true };
+}
+
 // ---------------------------------------------------------------
 // INTERPRET (free text → structured form)
 // ---------------------------------------------------------------
@@ -343,28 +410,31 @@ async function runOptimize() {
     travellers,
     preferences,
     outputStyle,
-    notes
+    notes,
   };
 
-  const result = await postJSON("/optimize", payload);
+  const result = await postJSONWithRetry("/optimize", payload, {
+    maxRetries: 1,
+    timeoutMs: 15000,
+  });
 
-optimizeBtn.disabled = false;
-optimizeBtn.textContent = "Optimize route ✈️";
+  optimizeBtn.disabled = false;
+  optimizeBtn.textContent = "Optimize route ✈️";
 
-if (result.error) {
-  alert("I couldn’t optimize this route. Please try again.");
-  return;
-}
+  if (result.error) {
+    alert("I couldn’t optimize this route. Please try again.");
+    return;
+  }
 
-// remember latest result for replay / late recap
-lastOptimizeResult = result;
+  // remember latest result for replay / late recap
+  lastOptimizeResult = result;
 
-renderResults(result);
-showRoutingUpdated("Routing updated just now.");
+  renderResults(result);
+  showRoutingUpdated("Routing updated just now.");
 
-if (playRecapCheckbox?.checked) {
-  speakSummary(result);
-   }
+  if (playRecapCheckbox?.checked) {
+    speakSummary(result);
+  }
 }
 
 optimizeBtn?.addEventListener("click", runOptimize);
