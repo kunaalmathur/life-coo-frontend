@@ -577,9 +577,17 @@ if (!res.ok) {
      URL.revokeObjectURL(url); // 🧹 cleanup audio blob
     };
 
+    audio.onerror = () => {
+     activeAudio = null;
+     URL.revokeObjectURL(url);
+     showRoutingUpdated("Could not play spoken recap.");
+};
+
+
    // Stop any previous recap audio (prevents overlap)
     if (activeAudio) {
      activeAudio.pause();
+     activeAudio.currentTime = 0;
      activeAudio = null;
     }
     activeAudio = audio;
@@ -657,6 +665,7 @@ loadProfileBtn?.addEventListener("click", () => {
       activeAudio.pause();
       activeAudio = null;
     }
+    showRoutingUpdated("Recap playback off.");
     return;
   }
 
