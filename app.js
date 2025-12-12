@@ -415,18 +415,18 @@ async function runOptimize() {
   };
 
   // Cold-start immunity: fast attempt, then a masked retry
-let result = await postJSONWithRetry("/optimize", payload, {
-  maxRetries: 0,       // attempt 1 only
-  timeoutMs: 8000,     // fast fail for cold-starts
-});
-
-if (result.error) {
-  showRoutingUpdated("Waking up your concierge… one moment.");
-  result = await postJSONWithRetry("/optimize", payload, {
-    maxRetries: 0,     // attempt 2 only
-    timeoutMs: 15000,  // give it more time once warmed
+  let result = await postJSONWithRetry("/optimize", payload, {
+    maxRetries: 0,
+    timeoutMs: 8000,
   });
-}
+
+  if (result.error) {
+    showRoutingUpdated("Waking up your concierge… one moment.");
+    result = await postJSONWithRetry("/optimize", payload, {
+      maxRetries: 0,
+      timeoutMs: 15000,
+    });
+  }
 
   optimizeBtn.disabled = false;
   optimizeBtn.textContent = "Optimize route ✈️";
@@ -526,17 +526,29 @@ async function speakSummary(data) {
     // UX: let the user know something is happening
     showRoutingUpdated("Preparing your spoken recap…");
 
-    const res = await fetch(`${API_BASE}/tts-recap`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
+  let res = await fetch(`${API_BASE}/tts-recap`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(data),
+});
 
-    if (!res.ok) {
-      console.error("TTS recap error:", res.status, await res.text());
-      showRoutingUpdated("Could not play spoken recap.");
-      return;
-    }
+if (!res.ok) {
+  // masked single retry for cold-start
+  showRoutingUpdated("Warming the voice concierge…");
+  await new Promise((r) => setTimeout(r, 900));
+
+  res = await fetch(`${API_BASE}/tts-recap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}
+
+if (!res.ok) {
+  console.error("TTS recap error:", res.status, await res.text());
+  showRoutingUpdated("Could not play spoken recap.");
+  return;
+}
 
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
