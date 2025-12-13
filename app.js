@@ -293,10 +293,10 @@ async function runInterpret(autoOptimize = false) {
   }
   if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = false;
 
-  if (result.error) {
-    alert("I couldn’t quite understand that. Please try rephrasing.");
-    return;
-  }
+if (result.error) {
+   setUIState(UI_STATES.ERROR, "Couldn’t understand. Please try rephrasing.");
+   return;
+}
 
   // Map backend fields → form DOM
   originInput.value = result.origin || "";
@@ -306,13 +306,21 @@ async function runInterpret(autoOptimize = false) {
   preferencesInput.value = result.preferences || "";
   notesInput.value = result.notes || "";
 
-  showRoutingUpdated(autoOptimize ? "Trip understood. Optimizing now…" : "Trip understood. Ready to optimize.");
-
   if (autoOptimize) {
-    await runOptimize();
-    if (!autoOptimize) setUIState(UI_STATES.IDLE, "Trip understood. Ready to optimize.");
-
+     // If interpret didn’t extract the minimum needed fields, don’t pretend we can optimize.
+     if (!originInput.value.trim() || !destinationInput.value.trim()) {
+       setUIState(UI_STATES.ERROR, "I understood parts of it, but I still need origin + destination.");
+       return;
   }
+
+     setUIState(UI_STATES.IDLE, "Trip understood. Optimizing now…");
+     await runOptimize();
+     return;
+}    else {
+     setUIState(UI_STATES.IDLE, "Trip understood. Ready to optimize.");
+     return;
+}
+
 }
 
 // Button: AI fill only
@@ -415,7 +423,7 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
 
 voiceBtn?.addEventListener("click", () => {
   if (!recognition) {
-    alert("Voice input is not supported in this browser.");
+    setUIState(UI_STATES.ERROR, "Voice input isn’t supported in this browser.");
     return;
   }
 
@@ -440,14 +448,14 @@ voiceBtn?.addEventListener("click", () => {
 // OPTIMIZE — form → backend → RHS
 // ---------------------------------------------------------------
 async function runOptimize() {
-  setUIState(UI_STATES.OPTIMIZING);
   const origin = originInput.value.trim();
   const destination = destinationInput.value.trim();
 
   if (!origin || !destination) {
-    alert("Origin and Destination are required.");
+    setUIState(UI_STATES.ERROR, "Origin and destination are required.");
     return;
   }
+  setUIState(UI_STATES.OPTIMIZING);
 
   const datesWindow = datesInput.value.trim();
   const travellers = travellersInput.value.trim();
@@ -456,9 +464,7 @@ async function runOptimize() {
   const outputStyle =
     (outputStyleSelect.value || "Executive summary (C-suite / family office)").trim();
 
-  optimizeBtn.disabled = true;
-  optimizeBtn.textContent = "Optimizing route…";
-  showRoutingUpdated("Optimizing your routing…");
+  setUIState(UI_STATES.OPTIMIZING, "Optimizing your routing…");
 
   // Optionally save profile
   if (rememberProfileCheckbox?.checked) {
@@ -482,18 +488,15 @@ async function runOptimize() {
   });
 
   if (result.error) {
-    showRoutingUpdated("Waking up your concierge… one moment.");
+    setUIState(UI_STATES.OPTIMIZING, "Waking up your concierge… one moment.");
     result = await postJSONWithRetry("/optimize", payload, {
       maxRetries: 0,
       timeoutMs: 15000,
     });
   }
 
-  optimizeBtn.disabled = false;
-  optimizeBtn.textContent = "Optimize route ✈️";
-
   if (result.error) {
-    alert("I couldn’t optimize this route. Please try again.");
+    setUIState(UI_STATES.ERROR, "Couldn’t optimize. Please try again.");
     return;
   }
 
@@ -501,7 +504,7 @@ async function runOptimize() {
   lastOptimizeResult = result;
 
   renderResults(result);
-  showRoutingUpdated("Routing updated just now.");
+  setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
   if (playRecapCheckbox?.checked) {
     speakSummary(result);
@@ -587,7 +590,7 @@ async function speakSummary(data) {
   const myToken = ++speakToken;
   try {
     // UX: let the user know something is happening
-    showRoutingUpdated("Preparing your spoken recap…");
+    setUIState(UI_STATES.SPEAKING, "Preparing your spoken recap…");
 
   let res = await fetch(`${API_BASE}/tts-recap`, {
   method: "POST",
@@ -597,7 +600,7 @@ async function speakSummary(data) {
 
 if (!res.ok) {
   // masked single retry for cold-start
-  showRoutingUpdated("Warming the voice concierge…");
+  setUIState(UI_STATES.SPEAKING, "Warming the voice concierge…");
   await new Promise((r) => setTimeout(r, 900));
 
   res = await fetch(`${API_BASE}/tts-recap`, {
@@ -609,7 +612,7 @@ if (!res.ok) {
 
 if (!res.ok) {
   console.error("TTS recap error:", res.status, await res.text());
-  showRoutingUpdated("Could not play spoken recap.");
+  setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
   return;
 }
 
@@ -625,11 +628,10 @@ if (!res.ok) {
     const audio = new Audio(url);
 
     audio.onplay = () => {
-     showRoutingUpdated("Playing spoken recap now.");
+    setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
     };
 
     audio.onended = () => {
-     showRoutingUpdated("Routing updated just now.");
      activeAudio = null;
      URL.revokeObjectURL(url); // 🧹 cleanup audio blob
      setUIState(UI_STATES.IDLE, "Routing updated just now.");
@@ -638,7 +640,7 @@ if (!res.ok) {
     audio.onerror = () => {
      activeAudio = null;
      URL.revokeObjectURL(url);
-     showRoutingUpdated("Could not play spoken recap.");
+     setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
 };
 
 
@@ -654,7 +656,7 @@ if (!res.ok) {
 
   } catch (err) {
     console.error("Network error during TTS recap:", err);
-    showRoutingUpdated("Could not play spoken recap.");
+    setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
   }
 }
 
@@ -694,7 +696,7 @@ loadProfileBtn?.addEventListener("click", () => {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) {
-      alert("No saved family profile yet.");
+      setUIState(UI_STATES.ERROR, "No saved family profile yet.");
       return;
     }
     const profile = JSON.parse(raw);
@@ -705,7 +707,7 @@ loadProfileBtn?.addEventListener("click", () => {
     preferencesInput.value = profile.preferences || "";
     outputStyleSelect.value = profile.outputStyle || "";
     notesInput.value = profile.notes || "";
-    showRoutingUpdated("Saved family profile loaded.");
+    setUIState(UI_STATES.IDLE, "Saved family profile loaded.");
   } catch (err) {
     console.error("Error loading profile", err);
   }
@@ -723,7 +725,7 @@ loadProfileBtn?.addEventListener("click", () => {
       activeAudio.pause();
       activeAudio = null;
     }
-    showRoutingUpdated("Recap playback off.");
+    setUIState(UI_STATES.IDLE, "Recap playback off.");
     return;
   }
 
