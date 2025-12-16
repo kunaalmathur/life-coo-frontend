@@ -112,6 +112,84 @@ let activeAudio = null;
 let speakToken = 0; // cancels older in-flight speakSummary calls
 
 // ---------------------------------------------------------------
+// DRIVE MODE — Upgrade 3A (hands-free core)
+// ---------------------------------------------------------------
+let driveModeActive = false;
+let driveModePrevPlayRecap = null;
+
+function setDriveMode(isOn) {
+  driveModeActive = isOn;
+
+  // Auto-enable recap while in Drive Mode (luxury, no taps needed)
+  if (playRecapCheckbox) {
+    if (isOn) {
+      driveModePrevPlayRecap = playRecapCheckbox.checked;
+      playRecapCheckbox.checked = true;
+    } else if (driveModePrevPlayRecap !== null) {
+      playRecapCheckbox.checked = driveModePrevPlayRecap;
+      driveModePrevPlayRecap = null;
+    }
+  }
+
+  if (isOn) {
+    setUIState(UI_STATES.LISTENING, "Drive Mode on. Listening…");
+    startListeningDriveMode();
+  } else {
+    setUIState(UI_STATES.IDLE, "Drive Mode off.");
+  }
+}
+
+// Returns true if handled (so we don’t send it to /interpret)
+function handleDriveModeCommand(rawText) {
+  const text = (rawText || "").trim().toLowerCase();
+  if (!text) return false;
+
+  // Safety: don’t accept voice commands while speaking (echo risk)
+  if (uiState === UI_STATES.SPEAKING) return true;
+
+  // Stop recap
+  if (text.includes("stop recap") || text === "stop") {
+    speakToken++; // cancel any in-flight recap
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio.currentTime = 0;
+      activeAudio = null;
+    }
+    setUIState(UI_STATES.IDLE, "Recap stopped.");
+    // In Drive Mode, resume listening
+    if (driveModeActive) startListeningDriveMode();
+    return true;
+  }
+
+  // Replay recap (last result)
+  if (text.includes("replay recap") || text.includes("replay") || text.includes("play recap again")) {
+    if (!lastOptimizeResult) {
+      setUIState(UI_STATES.ERROR, "Nothing to replay yet. Optimize a trip first.");
+      if (driveModeActive) startListeningDriveMode();
+      return true;
+    }
+    speakSummary(lastOptimizeResult);
+    return true;
+  }
+
+  // (Optional) Rewind 10s — only works if audio is currently playing
+  // Note: We are NOT listening during playback in Drive Mode, so this is mainly useful after playback ends.
+  if (text.includes("rewind 10") || text.includes("rewind ten")) {
+    if (activeAudio) {
+      activeAudio.currentTime = Math.max(0, (activeAudio.currentTime || 0) - 10);
+      setUIState(UI_STATES.SPEAKING, "Rewound 10 seconds.");
+    } else {
+      setUIState(UI_STATES.ERROR, "No recap is playing right now.");
+      if (driveModeActive) startListeningDriveMode();
+    }
+    return true;
+  }
+
+  // Not a command
+  return false;
+}
+
+// ---------------------------------------------------------------
 // INIT
 // ---------------------------------------------------------------
 
@@ -336,6 +414,40 @@ let recognition = null;
 let speechFinalTranscript = "";
 let speechSilenceTimeout = null;
 
+/* 🔽🔽🔽 PASTE BLOCK C RIGHT HERE 🔽🔽🔽 */
+
+function startListeningDriveMode() {
+  if (!driveModeActive) return;
+  if (!recognition) {
+    setUIState(UI_STATES.ERROR, "Drive Mode requires a browser that supports voice input.");
+    return;
+  }
+
+  // Don’t listen while speaking (echo / garble protection)
+  if (uiState === UI_STATES.SPEAKING) return;
+
+  // Reset capture
+  speechFinalTranscript = "";
+  if (speechSilenceTimeout) {
+    clearTimeout(speechSilenceTimeout);
+    speechSilenceTimeout = null;
+  }
+
+  if (agentInput) {
+    agentInput.value = "";
+    agentInput.placeholder = "Drive Mode: speak naturally…";
+  }
+
+  try {
+    recognition.start();
+  } catch (e) {
+    // Browser can throw if start() called too quickly
+    console.warn("Drive Mode recognition.start() blocked:", e);
+  }
+}
+
+/* 🔼🔼🔼 END BLOCK C 🔼🔼🔼 */
+
 if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SR();
@@ -416,8 +528,13 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
 
     // 🔴 THIS IS THE CRITICAL LINE:
     // Use your existing pipeline exactly as before
-    // This will call /interpret with agentInput.value, then /optimize
-    runInterpret(true);
+    // Drive Mode: intercept luxury commands (stop/replay/etc)
+    if (driveModeActive && handleDriveModeCommand(finalText)) {
+      return;
+    }
+
+// Normal pipeline
+runInterpret(true);
   };
 }
 
@@ -635,6 +752,7 @@ if (!res.ok) {
      activeAudio = null;
      URL.revokeObjectURL(url); // 🧹 cleanup audio blob
      setUIState(UI_STATES.IDLE, "Routing updated just now.");
+       if (driveModeActive) startListeningDriveMode();
     };
 
     audio.onerror = () => {
@@ -742,4 +860,7 @@ loadProfileBtn?.addEventListener("click", () => {
 driveToggle?.addEventListener("click", () => {
   const isActive = driveToggle.classList.toggle("drive-switch-active");
   document.body.classList.toggle("drive-mode", isActive);
+
+  // NEW: turn Drive Mode logic on/off (hands-free)
+  setDriveMode(isActive);
 });
