@@ -465,25 +465,40 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       agentInput.placeholder = "Listening… speak naturally.";
     }
   };
-
- recognition.onerror = (event) => {
+   
+recognition.onerror = (event) => {
   console.warn("Speech recognition error:", event.error);
 
-  // Drive Mode: ignore brief silence and keep listening
-  if (driveModeActive && event.error === "no-speech") {
+  const isSoft =
+    event.error === "no-speech" ||
+    event.error === "aborted" ||
+    event.error === "audio-capture" ||
+    event.error === "network";
+
+  // Drive Mode: treat common errors as transient and re-arm listening
+  if (driveModeActive && isSoft) {
     setUIState(UI_STATES.LISTENING, "Listening…");
     setTimeout(() => startListeningDriveMode(), 300);
     return;
   }
 
-  // Non–Drive Mode or real errors
-  setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
+  // Hard failures (permissions)
+  if (
+    driveModeActive &&
+    (event.error === "not-allowed" || event.error === "service-not-allowed")
+  ) {
+    setUIState(
+      UI_STATES.ERROR,
+      "Mic permission blocked. Allow mic access, then toggle Drive Mode again."
+    );
+    return;
+  }
 
+  // Manual mode fallback
+  setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
   if (agentBox) agentBox.classList.remove("agent-box-active");
   if (voiceBtn) voiceBtn.textContent = "Tap to speak";
-  if (agentInput) {
-    agentInput.placeholder = "Describe your trip to your Travel COO…";
-  }
+  if (agentInput) agentInput.placeholder = "Describe your trip to your Travel COO…";
 
   if (speechSilenceTimeout) {
     clearTimeout(speechSilenceTimeout);
@@ -531,10 +546,19 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
     }
 
     const finalText = agentInput ? agentInput.value.trim() : "";
-     if (!finalText) {
-      setUIState(UI_STATES.IDLE);
-     return;
-    }
+
+if (!finalText) {
+  // Drive Mode: if we captured nothing, keep listening hands-free
+  if (driveModeActive) {
+    setUIState(UI_STATES.LISTENING, "Listening…");
+    setTimeout(() => startListeningDriveMode(), 300);
+    return;
+  }
+
+  // Manual mode behavior
+  setUIState(UI_STATES.IDLE);
+  return;
+}
       setUIState(UI_STATES.UNDERSTANDING);
 
     // 🔴 THIS IS THE CRITICAL LINE:
