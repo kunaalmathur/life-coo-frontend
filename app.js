@@ -110,6 +110,8 @@ function setUIState(nextState, messageOverride = "") {
 let activeAudio = null;
 
 let speakToken = 0; // cancels older in-flight speakSummary calls
+let rearmAfterEnd = false;
+
 
 // ---------------------------------------------------------------
 // DRIVE MODE — Upgrade 3A (hands-free core)
@@ -413,6 +415,7 @@ aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 let recognition = null;
 let speechFinalTranscript = "";
 let speechSilenceTimeout = null;
+let isRecognizing = false;
 
 /* 🔽🔽🔽 PASTE BLOCK C RIGHT HERE 🔽🔽🔽 */
 
@@ -438,12 +441,15 @@ function startListeningDriveMode() {
     agentInput.placeholder = "Drive Mode: speak naturally…";
   }
 
+// ✅ If we are already listening, do nothing.
+  if (isRecognizing) return;
+
   try {
     recognition.start();
   } catch (e) {
-    // Browser can throw if start() called too quickly
     console.warn("Drive Mode recognition.start() blocked:", e);
   }
+
 }
 
 /* 🔼🔼🔼 END BLOCK C 🔼🔼🔼 */
@@ -458,6 +464,7 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   recognition.interimResults = true;   // stream partial text as you speak
 
   recognition.onstart = () => {
+    isRecognizing = true;
     setUIState(UI_STATES.LISTENING);
     if (agentBox) agentBox.classList.add("agent-box-active");
     if (voiceBtn) voiceBtn.textContent = "Listening…";
@@ -478,7 +485,11 @@ recognition.onerror = (event) => {
   // Drive Mode: treat common errors as transient and re-arm listening
   if (driveModeActive && isSoft) {
     setUIState(UI_STATES.LISTENING, "Listening…");
-    setTimeout(() => startListeningDriveMode(), 300);
+
+    // Ask the normal onend handler to re-arm
+    rearmAfterEnd = true;
+
+    try { recognition.stop(); } catch (_) {}
     return;
   }
 
@@ -535,6 +546,13 @@ recognition.onerror = (event) => {
   };
 
   recognition.onend = () => {
+     isRecognizing = false;
+     // Soft-error rearm path (must happen before finalText processing)
+    if (driveModeActive && rearmAfterEnd) {
+    rearmAfterEnd = false;
+    setTimeout(() => startListeningDriveMode(), 250);
+    return;
+  }
     if (speechSilenceTimeout) {
       clearTimeout(speechSilenceTimeout);
       speechSilenceTimeout = null;
@@ -578,6 +596,7 @@ voiceBtn?.addEventListener("click", () => {
     setUIState(UI_STATES.ERROR, "Voice input isn’t supported in this browser.");
     return;
   }
+  if (isRecognizing) return;   // ✅ add this
 
   // reset state for a fresh capture
   speechFinalTranscript = "";
@@ -591,7 +610,12 @@ voiceBtn?.addEventListener("click", () => {
     agentInput.placeholder = "Listening… speak naturally.";
   }
 
+  try {
   recognition.start();
+} catch (e) {
+  console.warn("Manual recognition.start() blocked:", e);
+}
+
 });
 
 // ==== END VOICE RECOGNITION v2 ====
