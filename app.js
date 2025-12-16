@@ -466,19 +466,30 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
     }
   };
 
-  recognition.onerror = (event) => {
-    setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
-    console.error("Speech recognition error:", event.error);
-    if (agentBox) agentBox.classList.remove("agent-box-active");
-    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
-    if (agentInput) {
-      agentInput.placeholder = "Describe your trip to your Travel COO…";
-    }
-    if (speechSilenceTimeout) {
-      clearTimeout(speechSilenceTimeout);
-      speechSilenceTimeout = null;
-    }
-  };
+ recognition.onerror = (event) => {
+  console.warn("Speech recognition error:", event.error);
+
+  // Drive Mode: ignore brief silence and keep listening
+  if (driveModeActive && event.error === "no-speech") {
+    setUIState(UI_STATES.LISTENING, "Listening…");
+    setTimeout(() => startListeningDriveMode(), 300);
+    return;
+  }
+
+  // Non–Drive Mode or real errors
+  setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
+
+  if (agentBox) agentBox.classList.remove("agent-box-active");
+  if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+  if (agentInput) {
+    agentInput.placeholder = "Describe your trip to your Travel COO…";
+  }
+
+  if (speechSilenceTimeout) {
+    clearTimeout(speechSilenceTimeout);
+    speechSilenceTimeout = null;
+  }
+};
 
   recognition.onresult = (event) => {
     let interimTranscript = "";
