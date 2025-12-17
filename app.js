@@ -903,7 +903,11 @@ loadProfileBtn?.addEventListener("click", () => {
       activeAudio = null;
     }
     setUIState(UI_STATES.IDLE, "Recap playback off.");
-    return;
+    
+    // ✅ NEW: if Drive Mode is on, resume listening immediately
+    if (driveModeActive) startListeningDriveMode();
+    
+     return;
   }
 
   // If user turns it ON: play latest recap (if available)
