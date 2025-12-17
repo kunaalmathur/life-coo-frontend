@@ -96,14 +96,22 @@ function setUIState(nextState, messageOverride = "") {
   if (aiFillBtn) aiFillBtn.disabled = isBusy;
   if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = isBusy;
 
-  // Keep voice available unless browser doesn’t support it
-  if (voiceBtn) voiceBtn.disabled = false;
-
   // 3) Button labels (tiny polish)
   if (optimizeBtn) {
     optimizeBtn.textContent =
       nextState === UI_STATES.OPTIMIZING ? "Optimizing route…" : "Optimize route ✈️";
   }
+   
+   // ✅ Voice button label always reflects real state
+  if (voiceBtn) {
+  voiceBtn.textContent =
+    nextState === UI_STATES.SPEAKING ? "Playing recap…" :
+    nextState === UI_STATES.LISTENING ? "Listening…" :
+    "Tap to speak";
+
+  voiceBtn.disabled = (nextState === UI_STATES.SPEAKING);
+}
+
 }
 
 // NEW: prevent overlapping recap audio
@@ -111,7 +119,6 @@ let activeAudio = null;
 
 let speakToken = 0; // cancels older in-flight speakSummary calls
 let rearmAfterEnd = false;
-
 
 // ---------------------------------------------------------------
 // DRIVE MODE — Upgrade 3A (hands-free core)
@@ -122,7 +129,7 @@ let driveModePrevPlayRecap = null;
 function setDriveMode(isOn) {
   driveModeActive = isOn;
 
-  // Auto-enable recap while in Drive Mode (luxury, no taps needed)
+  // Auto-enable recap while in Drive Mode
   if (playRecapCheckbox) {
     if (isOn) {
       driveModePrevPlayRecap = playRecapCheckbox.checked;
@@ -136,9 +143,23 @@ function setDriveMode(isOn) {
   if (isOn) {
     setUIState(UI_STATES.LISTENING, "Drive Mode on. Listening…");
     startListeningDriveMode();
-  } else {
-    setUIState(UI_STATES.IDLE, "Drive Mode off.");
+    return;
   }
+
+  // 🔴 Drive Mode OFF — hard stop voice engine
+  rearmAfterEnd = false;
+
+  try { recognition && recognition.stop(); } catch (_) {}
+  isRecognizing = false;
+
+  // 🔇 Stop any recap audio immediately
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio.currentTime = 0;
+    activeAudio = null;
+  }
+
+  setUIState(UI_STATES.IDLE, "Drive Mode off.");
 }
 
 // Returns true if handled (so we don’t send it to /interpret)
@@ -467,7 +488,6 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
     isRecognizing = true;
     setUIState(UI_STATES.LISTENING);
     if (agentBox) agentBox.classList.add("agent-box-active");
-    if (voiceBtn) voiceBtn.textContent = "Listening…";
     if (agentInput) {
       agentInput.placeholder = "Listening… speak naturally.";
     }
@@ -508,7 +528,7 @@ recognition.onerror = (event) => {
   // Manual mode fallback
   setUIState(UI_STATES.IDLE, "Voice had a hiccup. Tap to speak again.");
   if (agentBox) agentBox.classList.remove("agent-box-active");
-  if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+  //if (voiceBtn) voiceBtn.textContent = "Tap to speak";
   if (agentInput) agentInput.placeholder = "Describe your trip to your Travel COO…";
 
   if (speechSilenceTimeout) {
@@ -558,7 +578,7 @@ recognition.onerror = (event) => {
       speechSilenceTimeout = null;
     }
     if (agentBox) agentBox.classList.remove("agent-box-active");
-    if (voiceBtn) voiceBtn.textContent = "Tap to speak";
+    //if (voiceBtn) voiceBtn.textContent = "Tap to speak";
     if (agentInput && !agentInput.value) {
       agentInput.placeholder = "Describe your trip to your Travel COO…";
     }
@@ -566,14 +586,12 @@ recognition.onerror = (event) => {
     const finalText = agentInput ? agentInput.value.trim() : "";
 
 if (!finalText) {
-  // Drive Mode: if we captured nothing, keep listening hands-free
   if (driveModeActive) {
-    setUIState(UI_STATES.LISTENING, "Listening…");
+    // Do NOT change UI here — let onstart handle it
     setTimeout(() => startListeningDriveMode(), 300);
     return;
   }
 
-  // Manual mode behavior
   setUIState(UI_STATES.IDLE);
   return;
 }
