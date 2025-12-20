@@ -116,7 +116,8 @@ function setUIState(nextState, messageOverride = "") {
 
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
-
+// ✅ NEW: single source of truth — are we currently playing recap audio?
+let isSpeakingAudio = false;
 let speakToken = 0; // cancels older in-flight speakSummary calls
 let rearmAfterEnd = false;
 
@@ -178,6 +179,7 @@ function handleDriveModeCommand(rawText) {
       activeAudio.currentTime = 0;
       activeAudio = null;
     }
+    isSpeakingAudio = false;
     setUIState(UI_STATES.IDLE, "Recap stopped.");
     // In Drive Mode, resume listening
     if (driveModeActive) startListeningDriveMode();
@@ -447,8 +449,11 @@ function startListeningDriveMode() {
     return;
   }
 
-  // Don’t listen while speaking (echo / garble protection)
-  if (uiState === UI_STATES.SPEAKING) return;
+  // ✅ Don’t listen while recap audio is playing (echo protection)
+  if (isSpeakingAudio) return;
+
+  // ✅ If we are already listening, do nothing.
+  if (isRecognizing) return;
 
   // Reset capture
   speechFinalTranscript = "";
@@ -462,15 +467,11 @@ function startListeningDriveMode() {
     agentInput.placeholder = "Drive Mode: speak naturally…";
   }
 
-// ✅ If we are already listening, do nothing.
-  if (isRecognizing) return;
-
   try {
     recognition.start();
   } catch (e) {
     console.warn("Drive Mode recognition.start() blocked:", e);
   }
-
 }
 
 /* 🔼🔼🔼 END BLOCK C 🔼🔼🔼 */
@@ -485,6 +486,11 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   recognition.interimResults = true;   // stream partial text as you speak
 
   recognition.onstart = () => {
+  // ✅ If recap audio is playing, never allow listening to start
+    if (isSpeakingAudio) {
+       try { recognition.stop(); } catch (_) {}
+       return;
+     }
     isRecognizing = true;
     setUIState(UI_STATES.LISTENING);
     if (agentBox) agentBox.classList.add("agent-box-active");
@@ -566,7 +572,9 @@ recognition.onerror = (event) => {
   };
 
   recognition.onend = () => {
-     isRecognizing = false;
+    isRecognizing = false;
+       // ✅ If recap audio is playing, do NOT rearm listening or change state
+    if (isSpeakingAudio) return;
      // Soft-error rearm path (must happen before finalText processing)
     if (driveModeActive && rearmAfterEnd) {
     rearmAfterEnd = false;
@@ -822,22 +830,27 @@ if (!res.ok) {
     const audio = new Audio(url);
 
     audio.onplay = () => {
-    setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
+      isSpeakingAudio = true;
+      setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
     };
 
     audio.onended = () => {
+     isSpeakingAudio = false;
      activeAudio = null;
-     URL.revokeObjectURL(url); // 🧹 cleanup audio blob
-     setUIState(UI_STATES.IDLE, "Routing updated just now.");
-       if (driveModeActive) startListeningDriveMode();
-    };
+     URL.revokeObjectURL(url);
 
-    audio.onerror = () => {
+     setUIState(UI_STATES.IDLE, "Routing updated just now.");
+
+     // ✅ Only resume Drive Mode listening AFTER audio ends
+     if (driveModeActive) startListeningDriveMode();
+   };
+
+   audio.onerror = () => {
+     isSpeakingAudio = false;
      activeAudio = null;
      URL.revokeObjectURL(url);
      setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
-};
-
+   };
 
    // Stop any previous recap audio (prevents overlap)
     if (activeAudio) {
@@ -847,6 +860,12 @@ if (!res.ok) {
     }
     activeAudio = audio;
 
+   // ✅ HARD STOP mic before playing audio (prevents echo pickup)
+   rearmAfterEnd = false;
+   if (isRecognizing) {
+     try { recognition.stop(); } catch (_) {}
+     isRecognizing = false;
+}
     audio.play();
 
   } catch (err) {
