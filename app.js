@@ -118,8 +118,10 @@ function setUIState(nextState, messageOverride = "") {
 let activeAudio = null;
 // ✅ NEW: single source of truth — are we currently playing recap audio?
 let isSpeakingAudio = false;
+let driveModeQueued = false;
 let speakToken = 0; // cancels older in-flight speakSummary calls
 let rearmAfterEnd = false;
+let micLockedForPlayback = false;
 
 // ---------------------------------------------------------------
 // DRIVE MODE — Upgrade 3A (hands-free core)
@@ -141,14 +143,25 @@ function setDriveMode(isOn) {
     }
   }
 
+  // ✅ Drive Mode ON
   if (isOn) {
+    // If recap is currently playing, don't start listening yet — queue it
+    if (isSpeakingAudio || uiState === UI_STATES.SPEAKING || activeAudio) {
+      driveModeQueued = true;
+      setUIState(UI_STATES.SPEAKING, "Drive Mode on. Will listen after recap…");
+      return;
+    }
+
+    // Normal case: start listening immediately
+    driveModeQueued = false;
     setUIState(UI_STATES.LISTENING, "Drive Mode on. Listening…");
     startListeningDriveMode();
     return;
   }
 
-  // 🔴 Drive Mode OFF — hard stop voice engine
+  // 🔴 Drive Mode OFF — hard stop voice engine + cancel any queued resume
   rearmAfterEnd = false;
+  driveModeQueued = false;
 
   try { recognition && recognition.stop(); } catch (_) {}
   isRecognizing = false;
@@ -159,6 +172,8 @@ function setDriveMode(isOn) {
     activeAudio.currentTime = 0;
     activeAudio = null;
   }
+  micLockedForPlayback = false;
+  isSpeakingAudio = false;
 
   setUIState(UI_STATES.IDLE, "Drive Mode off.");
 }
@@ -443,6 +458,7 @@ let isRecognizing = false;
 /* 🔽🔽🔽 PASTE BLOCK C RIGHT HERE 🔽🔽🔽 */
 
 function startListeningDriveMode() {
+  if (micLockedForPlayback) return;
   if (!driveModeActive) return;
   if (!recognition) {
     setUIState(UI_STATES.ERROR, "Drive Mode requires a browser that supports voice input.");
@@ -485,23 +501,23 @@ if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
   recognition.continuous = true;       // keep listening across small pauses
   recognition.interimResults = true;   // stream partial text as you speak
 
-  recognition.onstart = () => {
-  // ✅ If recap audio is playing, never allow listening to start
-    if (isSpeakingAudio) {
-       try { recognition.stop(); } catch (_) {}
-       return;
-     }
-    isRecognizing = true;
-    setUIState(UI_STATES.LISTENING);
-    if (agentBox) agentBox.classList.add("agent-box-active");
-    if (agentInput) {
-      agentInput.placeholder = "Listening… speak naturally.";
-    }
-  };
+recognition.onstart = () => {
+  // Never allow mic to “start” while recap audio is playing
+  if (micLockedForPlayback || isSpeakingAudio) {
+    try { recognition.stop(); } catch (_) {}
+    return;
+  }
+
+  isRecognizing = true;
+  setUIState(UI_STATES.LISTENING);
+
+  if (agentBox) agentBox.classList.add("agent-box-active");
+  if (agentInput) agentInput.placeholder = "Listening… speak naturally.";
+};
    
 recognition.onerror = (event) => {
+  if (micLockedForPlayback || isSpeakingAudio) return;
   console.warn("Speech recognition error:", event.error);
-
   const isSoft =
     event.error === "no-speech" ||
     event.error === "aborted" ||
@@ -574,7 +590,7 @@ recognition.onerror = (event) => {
   recognition.onend = () => {
     isRecognizing = false;
        // ✅ If recap audio is playing, do NOT rearm listening or change state
-    if (isSpeakingAudio) return;
+    if (micLockedForPlayback || isSpeakingAudio) return;
      // Soft-error rearm path (must happen before finalText processing)
     if (driveModeActive && rearmAfterEnd) {
     rearmAfterEnd = false;
@@ -829,44 +845,66 @@ if (!res.ok) {
 
     const audio = new Audio(url);
 
-    audio.onplay = () => {
-      isSpeakingAudio = true;
-      setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
-    };
+audio.onplay = () => {
+  isSpeakingAudio = true;
+  micLockedForPlayback = true; // ✅ HARD LOCK
+  setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
+};
 
-    audio.onended = () => {
-     isSpeakingAudio = false;
-     activeAudio = null;
-     URL.revokeObjectURL(url);
+audio.onended = () => {
+  isSpeakingAudio = false;
+  micLockedForPlayback = false; // ✅ UNLOCK
 
-     setUIState(UI_STATES.IDLE, "Routing updated just now.");
+  activeAudio = null;
+  URL.revokeObjectURL(url);
 
-     // ✅ Only resume Drive Mode listening AFTER audio ends
-     if (driveModeActive) startListeningDriveMode();
-   };
+  setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
-   audio.onerror = () => {
-     isSpeakingAudio = false;
-     activeAudio = null;
-     URL.revokeObjectURL(url);
-     setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
-   };
+  // ✅ Resume listening AFTER audio ends (Drive Mode ON or queued)
+  if (driveModeActive || driveModeQueued) {
+    driveModeQueued = false;
+    startListeningDriveMode();
+  }
+};
 
-   // Stop any previous recap audio (prevents overlap)
-    if (activeAudio) {
-     activeAudio.pause();
-     activeAudio.currentTime = 0;
-     activeAudio = null;
-    }
-    activeAudio = audio;
+audio.onerror = () => {
+  isSpeakingAudio = false;
+  micLockedForPlayback = false; // ✅ UNLOCK
 
-   // ✅ HARD STOP mic before playing audio (prevents echo pickup)
-   rearmAfterEnd = false;
-   if (isRecognizing) {
-     try { recognition.stop(); } catch (_) {}
-     isRecognizing = false;
+  activeAudio = null;
+  URL.revokeObjectURL(url);
+  setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
+
+  // ✅ If Drive Mode was waiting, resume listening anyway
+  if (driveModeActive || driveModeQueued) {
+    driveModeQueued = false;
+    startListeningDriveMode();
+  }
+};
+
+// Stop any previous recap audio (prevents overlap)
+if (activeAudio) {
+  activeAudio.pause();
+  activeAudio.currentTime = 0;
+  activeAudio = null;
 }
-    audio.play();
+activeAudio = audio;
+
+// ✅ HARD STOP mic + timers before playing audio (prevents echo pickup / weird UI)
+rearmAfterEnd = false;
+driveModeQueued = driveModeQueued || driveModeActive;
+
+if (speechSilenceTimeout) {
+  clearTimeout(speechSilenceTimeout);
+  speechSilenceTimeout = null;
+}
+
+if (isRecognizing) {
+  try { recognition.stop(); } catch (_) {}
+  isRecognizing = false;
+}
+
+audio.play();
 
   } catch (err) {
     console.error("Network error during TTS recap:", err);
