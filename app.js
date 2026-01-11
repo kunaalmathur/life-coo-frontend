@@ -102,17 +102,23 @@ function setUIState(nextState, messageOverride = "") {
       nextState === UI_STATES.OPTIMIZING ? "Optimizing route…" : "Optimize route ✈️";
   }
    
-   // ✅ Voice button label always reflects real state
+     // ✅ Voice button label reflects real state (preparing vs playing)
+  const statusText = (messageOverride || defaultMessage || "").toLowerCase();
+
   if (voiceBtn) {
-  voiceBtn.textContent =
-    nextState === UI_STATES.SPEAKING ? "Playing recap…" :
-    nextState === UI_STATES.LISTENING ? "Listening…" :
-    "Tap to speak";
-
-  voiceBtn.disabled = (nextState === UI_STATES.SPEAKING);
-}
-
-}
+    voiceBtn.textContent =
+      nextState === UI_STATES.SPEAKING
+        ? (statusText.includes("preparing") || statusText.includes("warming")
+            ? "Preparing recap…"
+            : "Playing recap…")
+        : nextState === UI_STATES.LISTENING
+        ? "Listening…"
+        : pendingRecapUrl
+        ? "Tap to play recap"
+        : "Tap to speak";
+    voiceBtn.disabled = (nextState === UI_STATES.SPEAKING);
+  }
+} // ✅ THIS closes setUIState
 
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
@@ -122,6 +128,8 @@ let driveModeQueued = false;
 let speakToken = 0; // cancels older in-flight speakSummary calls
 let rearmAfterEnd = false;
 let micLockedForPlayback = false;
+let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
+let pendingRecapBlob = null;  // optional
 
 // ---------------------------------------------------------------
 // DRIVE MODE — Upgrade 3A (hands-free core)
@@ -395,6 +403,11 @@ async function postJSONWithRetry(path, body, options = {}) {
 async function runInterpret(autoOptimize = false) {
   const text = (agentInput?.value || "").trim();
   if (!text) return;
+// ✅ Global voice/text commands (work even when Drive Mode is OFF)
+  if (handleDriveModeCommand(text)) {
+    return;
+  }
+
    setUIState(UI_STATES.UNDERSTANDING);
 
   if (aiFillBtn) {
@@ -634,6 +647,62 @@ runInterpret(true);
 }
 
 voiceBtn?.addEventListener("click", () => {
+// ✅ If iOS blocked autoplay, let user tap to play recap instead of starting mic
+  if (pendingRecapUrl) {
+    // Stop mic if it's running
+    rearmAfterEnd = false;
+    try { recognition && recognition.stop(); } catch (_) {}
+    isRecognizing = false;
+
+    // Stop any existing recap audio first
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio.currentTime = 0;
+      activeAudio = null;
+    }
+
+    const a = new Audio(pendingRecapUrl);
+    activeAudio = a;
+
+    a.onplay = () => {
+      isSpeakingAudio = true;
+      micLockedForPlayback = true;
+      setUIState(UI_STATES.SPEAKING, "Playing spoken recap now.");
+    };
+
+    a.onended = () => {
+      isSpeakingAudio = false;
+      micLockedForPlayback = false;
+      activeAudio = null;
+
+      URL.revokeObjectURL(pendingRecapUrl);
+      pendingRecapUrl = null;
+
+      setUIState(UI_STATES.IDLE, "Routing updated just now.");
+      if (driveModeActive || driveModeQueued) {
+        driveModeQueued = false;
+        startListeningDriveMode();
+      }
+    };
+
+    a.onerror = () => {
+      isSpeakingAudio = false;
+      micLockedForPlayback = false;
+      activeAudio = null;
+
+      URL.revokeObjectURL(pendingRecapUrl);
+      pendingRecapUrl = null;
+
+      setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
+    };
+
+    a.play().catch(() => {
+      setUIState(UI_STATES.ERROR, "Playback blocked. Try again.");
+    });
+
+    return; // ✅ don't start recognition on this tap
+  }
+
   if (!recognition) {
     setUIState(UI_STATES.ERROR, "Voice input isn’t supported in this browser.");
     return;
@@ -800,6 +869,12 @@ function renderResults(data) {
   setRiskLevel(data.riskLevel || "Medium");
 }
 
+// ✅ iOS autoplay fallback: when playback is blocked, store URL and ask user to tap
+function showTapToPlayRecap(url) {
+  pendingRecapUrl = url;
+  setUIState(UI_STATES.IDLE, "Recap ready. Tap the voice button to play.");
+}
+
 // ---------------------------------------------------------------
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
@@ -904,7 +979,11 @@ if (isRecognizing) {
   isRecognizing = false;
 }
 
-audio.play();
+audio.play().catch((err) => {
+  console.warn("Autoplay blocked (likely iOS):", err);
+  // keep the blob URL so user can tap to play
+  showTapToPlayRecap(url);
+});
 
   } catch (err) {
     console.error("Network error during TTS recap:", err);
@@ -973,6 +1052,10 @@ loadProfileBtn?.addEventListener("click", () => {
   // If user turns it OFF: stop audio + cancel any in-flight fetch
   if (!playRecapCheckbox.checked) {
      speakToken++; // cancels pending speakSummary responses
+     if (pendingRecapUrl) {
+      URL.revokeObjectURL(pendingRecapUrl);
+      pendingRecapUrl = null;
+    }
     if (activeAudio) {
       activeAudio.pause();
       activeAudio = null;
