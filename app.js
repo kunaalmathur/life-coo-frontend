@@ -867,7 +867,10 @@ async function runOptimize() {
   }
 }
 
-optimizeBtn?.addEventListener("click", runOptimize);
+optimizeBtn?.addEventListener("click", async () => {
+  unlockAudioOnce();     // ✅ helps iPhone allow upcoming playback
+  await runOptimize();
+});
 
 // ---------------------------------------------------------------
 // RENDER RESULTS (RHS)
@@ -1126,25 +1129,43 @@ loadProfileBtn?.addEventListener("click", () => {
    playRecapCheckbox?.addEventListener("change", () => {
   // If user turns it OFF: stop audio + cancel any in-flight fetch
   if (!playRecapCheckbox.checked) {
-     speakToken++; // cancels pending speakSummary responses
-     if (pendingRecapUrl) {
+    speakToken++; // cancels pending speakSummary responses
+
+    if (pendingRecapUrl) {
       URL.revokeObjectURL(pendingRecapUrl);
       pendingRecapUrl = null;
     }
+
     if (activeAudio) {
       activeAudio.pause();
+      activeAudio.currentTime = 0;
       activeAudio = null;
     }
+
     setUIState(UI_STATES.IDLE, "Recap playback off.");
-    
-    // ✅ NEW: if Drive Mode is on, resume listening immediately
+
+    // if Drive Mode is on, resume listening immediately
     if (driveModeActive) startListeningDriveMode();
-    
-     return;
+    return;
   }
 
-  // If user turns it ON: play latest recap (if available)
-  if (lastOptimizeResult) {
+  // If user turns it ON: unlock audio now (iOS gesture)
+  unlockAudioOnce();
+
+  // Clean up any existing audio/pending before starting a new recap
+  speakToken++; // cancel any in-flight recap
+  if (pendingRecapUrl) {
+    URL.revokeObjectURL(pendingRecapUrl);
+    pendingRecapUrl = null;
+  }
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio.currentTime = 0;
+    activeAudio = null;
+  }
+
+  // If a recap already exists, play it (unless we're currently speaking/locked)
+  if (lastOptimizeResult && !isSpeakingAudio && !micLockedForPlayback) {
     speakSummary(lastOptimizeResult);
   }
 });
