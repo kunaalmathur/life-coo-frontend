@@ -288,7 +288,7 @@ function handleDriveModeCommand(rawText) {
       if (driveModeActive) startListeningDriveMode();
       return true;
     }
-    speakSummary(lastOptimizeResult);
+    speakSummary(lastOptimizeResult, { force: true });
     return true;
   }
 
@@ -950,7 +950,7 @@ function showTapToPlayRecap(url) {
 // ---------------------------------------------------------------
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
-async function speakSummary(data) {
+async function speakSummary(data, { force = false } = {}) {
   setUIState(UI_STATES.SPEAKING);
   const myToken = ++speakToken;
   try {
@@ -985,11 +985,11 @@ if (!res.ok) {
     const url = URL.createObjectURL(blob);
 
    // If another speak started after this one, or recap got turned off, don't play.
-   if (myToken !== speakToken || !playRecapCheckbox?.checked) {
-      URL.revokeObjectURL(url);
-      return;
+   if (myToken !== speakToken || (!force && !playRecapCheckbox?.checked)) {
+     URL.revokeObjectURL(url);
+     setUIState(UI_STATES.IDLE, "Recap skipped.");
+     return;
    }
-
     const audio = new Audio(url);
 
 audio.onplay = () => {
