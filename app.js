@@ -71,6 +71,50 @@ const UI_STATES = {
 
 let uiState = UI_STATES.IDLE;
 
+let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
+let pendingRecapBlob = null;  // optional
+
+// ✅ iOS audio unlock (Drive Mode uses the toggle as the one "gesture" for the whole session)
+let audioUnlocked = false;
+
+async function unlockAudioOnce() {
+  if (audioUnlocked) return true;
+
+  // 1) WebAudio unlock attempt
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) {
+      const ctx = new AC();
+      await ctx.resume();
+
+      // play a tiny silent buffer
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+
+      audioUnlocked = true;
+      return true;
+    }
+  } catch (_) {}
+
+  // 2) Fallback: muted HTMLAudio unlock
+  try {
+    const a = new Audio();
+    a.muted = true;
+    a.playsInline = true;
+    a.src =
+      "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA" +
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+    await a.play();
+    audioUnlocked = true;
+    return true;
+  } catch (_) {}
+
+  return false;
+}
+
 function setUIState(nextState, messageOverride = "") {
   uiState = nextState;
 
@@ -128,8 +172,36 @@ let driveModeQueued = false;
 let speakToken = 0; // cancels older in-flight speakSummary calls
 let rearmAfterEnd = false;
 let micLockedForPlayback = false;
-let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
-let pendingRecapBlob = null;  // optional
+
+let recognition = null;
+let speechFinalTranscript = "";
+let speechSilenceTimeout = null;
+let isRecognizing = false;
+
+// ✅ Shared helper: resume Drive Mode mic safely after ANY recap audio ends
+function resumeDriveModeListeningSafely() {
+  if (!(driveModeActive || driveModeQueued)) return;
+
+  driveModeQueued = false;
+
+  // give mobile browsers a beat after playback before restarting mic
+  setTimeout(() => {
+    startListeningDriveMode();
+
+    // watchdog retry once
+    setTimeout(() => {
+      if (
+        driveModeActive &&
+        !isRecognizing &&
+        !isSpeakingAudio &&
+        !micLockedForPlayback
+      ) {
+        console.warn("Watchdog: mic did not start, retrying recognition.start()");
+        startListeningDriveMode();
+      }
+    }, 900);
+  }, 350);
+}
 
 // ---------------------------------------------------------------
 // DRIVE MODE — Upgrade 3A (hands-free core)
@@ -463,10 +535,7 @@ aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 // ---------------------------------------------------------------
 // VOICE INPUT — STREAMING + SANE PAUSE
 // ---------------------------------------------------------------
-let recognition = null;
-let speechFinalTranscript = "";
-let speechSilenceTimeout = null;
-let isRecognizing = false;
+
 
 /* 🔽🔽🔽 PASTE BLOCK C RIGHT HERE 🔽🔽🔽 */
 
@@ -539,7 +608,7 @@ recognition.onerror = (event) => {
 
   // Drive Mode: treat common errors as transient and re-arm listening
   if (driveModeActive && isSoft) {
-    setUIState(UI_STATES.LISTENING, "Listening…");
+      setUIState(UI_STATES.IDLE, "Re-arming listening…");
 
     // Ask the normal onend handler to re-arm
     rearmAfterEnd = true;
@@ -671,19 +740,16 @@ voiceBtn?.addEventListener("click", () => {
     };
 
     a.onended = () => {
-      isSpeakingAudio = false;
-      micLockedForPlayback = false;
-      activeAudio = null;
+     isSpeakingAudio = false;
+     micLockedForPlayback = false;
+     activeAudio = null;
 
-      URL.revokeObjectURL(pendingRecapUrl);
-      pendingRecapUrl = null;
+     URL.revokeObjectURL(pendingRecapUrl);
+     pendingRecapUrl = null;
 
-      setUIState(UI_STATES.IDLE, "Routing updated just now.");
-      if (driveModeActive || driveModeQueued) {
-        driveModeQueued = false;
-        startListeningDriveMode();
-      }
-    };
+     setUIState(UI_STATES.IDLE, "Routing updated just now.");
+     resumeDriveModeListeningSafely();
+   };
 
     a.onerror = () => {
       isSpeakingAudio = false;
@@ -694,6 +760,9 @@ voiceBtn?.addEventListener("click", () => {
       pendingRecapUrl = null;
 
       setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
+      // If Drive Mode is on, don't strand the user — re-arm listening
+      resumeDriveModeListeningSafely();
+
     };
 
     a.play().catch(() => {
@@ -932,29 +1001,21 @@ audio.onended = () => {
 
   activeAudio = null;
   URL.revokeObjectURL(url);
-
+   
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
-
-  // ✅ Resume listening AFTER audio ends (Drive Mode ON or queued)
-  if (driveModeActive || driveModeQueued) {
-    driveModeQueued = false;
-    startListeningDriveMode();
-  }
+  
+  resumeDriveModeListeningSafely();
 };
 
 audio.onerror = () => {
   isSpeakingAudio = false;
-  micLockedForPlayback = false; // ✅ UNLOCK
+  micLockedForPlayback = false;
 
   activeAudio = null;
   URL.revokeObjectURL(url);
   setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
 
-  // ✅ If Drive Mode was waiting, resume listening anyway
-  if (driveModeActive || driveModeQueued) {
-    driveModeQueued = false;
-    startListeningDriveMode();
-  }
+  resumeDriveModeListeningSafely();
 };
 
 // Stop any previous recap audio (prevents overlap)
@@ -979,9 +1040,23 @@ if (isRecognizing) {
   isRecognizing = false;
 }
 
-audio.play().catch((err) => {
-  console.warn("Autoplay blocked (likely iOS):", err);
-  // keep the blob URL so user can tap to play
+audio.play().catch(async (err) => {
+  console.warn("Autoplay blocked:", err);
+
+  // ✅ Drive Mode: try to unlock and retry once (hands-free as much as iOS allows)
+  if (driveModeActive) {
+    const ok = await unlockAudioOnce();
+    if (ok) {
+      try {
+        await audio.play();
+        return;
+      } catch (_) {
+        // fall through to tap-to-play
+      }
+    }
+  }
+
+  // fallback (works everywhere)
   showTapToPlayRecap(url);
 });
 
@@ -1081,6 +1156,11 @@ loadProfileBtn?.addEventListener("click", () => {
 driveToggle?.addEventListener("click", () => {
   const isActive = driveToggle.classList.toggle("drive-switch-active");
   document.body.classList.toggle("drive-mode", isActive);
+
+  // ✅ iOS: use Drive Mode toggle as the one-time "gesture" to unlock audio for this session
+  if (isActive) {
+    unlockAudioOnce(); // best-effort; don't block UI
+  }
 
   // NEW: turn Drive Mode logic on/off (hands-free)
   setDriveMode(isActive);
