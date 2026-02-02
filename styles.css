@@ -26,6 +26,12 @@
 
   --shadow-soft: 0 25px 50px rgba(0, 0, 0, 0.55);
 }
+   /* -------------------------------------------------------------
+   GLOBAL UTILITIES
+-------------------------------------------------------------- */
+.hidden {
+  display: none !important;
+}
 
 /* -------------------------------------------------------------
    GLOBAL RESET
@@ -413,4 +419,42 @@ button {
   }
 }
 
+/* Luxe Booking Card (Beta Hook) */
+.lux-card {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  backdrop-filter: blur(10px);
+}
 
+.lux-card-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+
+.lux-bullets {
+  font-size: 0.85rem;
+  margin-left: 18px;
+}
+
+.lux-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lux-link-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.lux-link-btn:hover {
+  background: rgba(255,255,255,0.08);
+}
