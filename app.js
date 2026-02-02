@@ -43,6 +43,12 @@ const recapList = document.getElementById("recapList");
 const optionsContainer = document.getElementById("optionsContainer");
 const riskList = document.getElementById("riskList");
 
+// Booking Recommendation (Beta)
+const bookingCard = document.getElementById("bookingCard");
+const bookingChannel = document.getElementById("bookingChannel");
+const bookingReasons = document.getElementById("bookingReasons");
+const bookingLinks = document.getElementById("bookingLinks");
+
 // Risk pills
 const riskLow = document.getElementById("riskLow");
 const riskMedium = document.getElementById("riskMedium");
@@ -358,7 +364,12 @@ function resetResults() {
   if (riskList) {
     riskList.innerHTML = "<li>No risk details yet.</li>";
   }
-}
+   // Reset booking recommendation
+  if (bookingCard) bookingCard.classList.add("hidden");
+  if (bookingChannel) bookingChannel.textContent = "";
+  if (bookingReasons) bookingReasons.innerHTML = "";
+  if (bookingLinks) bookingLinks.innerHTML = "";
+  }
 
 // Risk pill highlight
 function setRiskLevel(level) {
@@ -872,6 +883,31 @@ optimizeBtn?.addEventListener("click", async () => {
   await runOptimize();
 });
 
+function renderBookingRecommendation(br) {
+  if (!bookingCard || !br) return;
+
+  bookingCard.classList.remove("hidden");
+  bookingChannel.textContent = br.recommendedChannel || "";
+
+  bookingReasons.innerHTML = "";
+  (br.reasonBullets || []).forEach(reason => {
+    const li = document.createElement("li");
+    li.textContent = reason;
+    bookingReasons.appendChild(li);
+  });
+
+  bookingLinks.innerHTML = "";
+  (br.bookingLinks || []).forEach(link => {
+    const a = document.createElement("a");
+    a.className = "lux-link-btn";
+    a.href = link.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = link.label;
+    bookingLinks.appendChild(a);
+  });
+}
+
 // ---------------------------------------------------------------
 // RENDER RESULTS (RHS)
 // ---------------------------------------------------------------
@@ -936,6 +972,9 @@ function renderResults(data) {
       riskList.appendChild(li);
     });
   }
+
+  // ✅ ALWAYS evaluate booking recommendation independently
+  renderBookingRecommendation(data.bookingRecommendation);
 
   // Risk level pill
   setRiskLevel(data.riskLevel || "Medium");
