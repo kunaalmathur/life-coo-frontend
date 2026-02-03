@@ -510,8 +510,8 @@ button {
 
 /* Bullet text parity */
 #bookingReasons li {
-  font-size: 12px;          /* SAME as executive recap bullets */
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.75;
 }
 
 /* Ensure booking section doesn’t visually shrink */
