@@ -268,9 +268,17 @@ button {
 .btn-chip {
   padding: 6px 12px;
   font-size: 11px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(56,189,248,0.25);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   border-radius: 999px;
+  color: #e5e7eb;              /* 🔥 FIX: readable light text */
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-chip:hover {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.6);
 }
 
 /* INPUTS --------------------------------------------------------------- */
@@ -329,7 +337,10 @@ button {
 
 .results-header-right {
   display: flex;
+  flex-direction: row;   /* 🔒 force horizontal */
   gap: 6px;
+  align-items: center;
+  flex-wrap: nowrap;     /* 🔒 prevent stacking */
 }
 
 .pill {
@@ -337,6 +348,9 @@ button {
   border-radius: 999px;
   font-size: 11px;
   border: 1px solid rgba(255,255,255,0.12);
+
+  display: inline-flex;     /* 🔥 ADD */
+  white-space: nowrap;      /* 🔥 ADD */
 }
 
 .pill-risk-low {
