@@ -455,8 +455,8 @@ button {
   margin-bottom: 10px;
 }
 
-#bookingReasons li + li {
-  margin-top: 4px;
+.panel-right .lux-card #bookingReasons li + li {
+  margin-top: 10px;
 }
 
 /* Booking action pills */
@@ -508,4 +508,22 @@ button {
 
 .panel-right .lux-card #bookingReasons li::marker {
   color: rgba(255,255,255,0.75);
+}
+
+/* Phase 1.7 — Booking bullets: premium presence */
+.panel-right .lux-card #bookingReasons {
+  padding-left: 20px;
+}
+
+.panel-right .lux-card #bookingReasons li {
+  position: relative;
+}
+
+/* Phase 1.7 — Subtle hover confidence (no animation noise) */
+.panel-right .lux-card #bookingReasons li:hover {
+  color: #ffffff;
+}
+
+.panel-right .lux-card #bookingReasons li:hover::marker {
+  color: rgba(255,255,255,0.95);
 }
