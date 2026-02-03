@@ -444,6 +444,9 @@ button {
   border: 1px solid rgba(255,255,255,0.12);
   background: var(--glass);
   box-shadow: var(--shadow-soft);
+
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .lux-card .results-title,
@@ -490,4 +493,29 @@ button {
 .lux-link-btn:hover {
   background: rgba(56,189,248,0.22);
   border-color: rgba(56,189,248,0.65);
+}
+
+/* Typography parity with RHS sections */
+
+/* Title: “Life COO Booking Recommendation” */
+#bookingChannel {
+  display: block;
+  font-size: 12px;          /* SAME as .results-title */
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #cbd5f5;
+  margin-bottom: 10px;
+}
+
+/* Bullet text parity */
+#bookingReasons li {
+  font-size: 12px;          /* SAME as executive recap bullets */
+  line-height: 1.6;
+}
+
+/* Ensure booking section doesn’t visually shrink */
+.lux-card ul,
+.lux-card li {
+  font-size: 12px;
 }
