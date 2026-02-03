@@ -550,3 +550,30 @@ button {
   background: rgba(56,189,248,0.22);
   border-color: rgba(56,189,248,0.7);
 }
+
+/* =============================================================
+   PRIMARY QUICK-START ACTION — LOAD SAMPLE (REAL FINAL FIX)
+============================================================= */
+
+/* =============================================================
+   PRIMARY QUICK-START ACTION — LOAD SAMPLE (NUCLEAR OVERRIDE)
+============================================================= */
+
+button#sampleBtn {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+
+  padding: 9px 18px !important;
+  border-radius: 999px !important;
+
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  background: rgba(255,255,255,0.10) !important;
+
+  cursor: pointer;
+}
+
+button#sampleBtn:hover {
+  background: rgba(56,189,248,0.22) !important;
+  border-color: rgba(56,189,248,0.7) !important;
+}
