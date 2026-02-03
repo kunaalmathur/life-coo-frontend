@@ -418,6 +418,19 @@ button {
   font-size: 12px;
 }
 
+/* WHERE TO BOOK — INVESTOR GRADE PROMINENCE */
+.results-section .results-list li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-main);
+  opacity: 0.95;
+  font-weight: 400;
+}
+/* 🔥 ADD THIS — Bullet marker polish */
+.results-section .results-list li::marker {
+  color: rgba(255,255,255,0.65);
+}
+
 /* -------------------------------------------------------------
    RESPONSIVE
 -------------------------------------------------------------- */
