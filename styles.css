@@ -493,27 +493,6 @@ button {
   margin-bottom: 12px;
 }
 
-/* 🔒 FINAL HARD LOCK — Where to Book parity */
-.panel-right .lux-card #bookingReasons li {
-  font-size: 14px;
-  line-height: 1.8;
-  color: #ffffff;
-  font-weight: 400;
-}
-
-.panel-right .lux-card #bookingReasons li::marker {
-  color: rgba(255,255,255,0.75);
-}
-
-/* Phase 1.7 — Booking bullets: premium presence */
-.panel-right .lux-card #bookingReasons {
-  padding-left: 20px;
-}
-
-.panel-right .lux-card #bookingReasons li {
-  position: relative;
-}
-
 /* Phase 1.7 — Subtle hover confidence (no animation noise) */
 .panel-right .lux-card #bookingReasons li:hover {
   color: #ffffff;
@@ -556,23 +535,20 @@ button {
 }
 
 /* =============================================================
-   PRIMARY QUICK-START ACTION — LOAD SAMPLE TRIP
+   PRIMARY QUICK-START ACTION — LOAD SAMPLE TRIP (FINAL)
 ============================================================= */
 
-button.load-sample,
-button[data-action="load-sample"] {
-  font-size: 13px;
-  font-weight: 500;
-  color: #f9fafb;
-  padding: 7px 16px;
+.panel-left button.btn-secondary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  padding: 9px 18px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.10);
 }
 
-button.load-sample:hover,
-button[data-action="load-sample"]:hover {
+.panel-left button.btn-secondary:hover {
   background: rgba(56,189,248,0.22);
   border-color: rgba(56,189,248,0.7);
-  color: #ffffff;
 }
