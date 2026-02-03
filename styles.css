@@ -444,15 +444,6 @@ button {
   border: 1px solid rgba(255,255,255,0.12);
   background: var(--glass);
   box-shadow: var(--shadow-soft);
-
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-/* Hard-lock booking typography inside the booking card */
-.lux-card #bookingChannel,
-.lux-card #bookingReasons li {
-  opacity: 1 !important;
 }
 
 .lux-card .results-title,
@@ -462,14 +453,6 @@ button {
   text-transform: uppercase;
   color: #cbd5f5;
   margin-bottom: 10px;
-}
-
-/* Booking bullets */
-.lux-bullets,
-#bookingReasons {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--text-main);
 }
 
 #bookingReasons li + li {
@@ -515,16 +498,14 @@ button {
   margin-bottom: 12px;
 }
 
-/* Booking bullets — investor-grade parity */
-#bookingReasons li {
-  font-size: 13px;
-  line-height: 1.75;
-
-  /* IMPORTANT: no opacity → avoid dull text */
-  color: #f8fafc;   /* crisp, premium white */
+/* 🔒 FINAL HARD LOCK — Where to Book parity */
+.panel-right .lux-card #bookingReasons li {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #ffffff;
   font-weight: 400;
 }
 
-#bookingReasons li::marker {
-  color: rgba(248,250,252,0.70);
+.panel-right .lux-card #bookingReasons li::marker {
+  color: rgba(255,255,255,0.75);
 }
