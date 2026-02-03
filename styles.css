@@ -418,19 +418,6 @@ button {
   font-size: 12px;
 }
 
-/* WHERE TO BOOK — INVESTOR GRADE PROMINENCE */
-.results-section .results-list li {
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text-main);
-  opacity: 0.95;
-  font-weight: 400;
-}
-/* 🔥 ADD THIS — Bullet marker polish */
-.results-section .results-list li::marker {
-  color: rgba(255,255,255,0.65);
-}
-
 /* -------------------------------------------------------------
    RESPONSIVE
 -------------------------------------------------------------- */
@@ -536,3 +523,27 @@ button {
 #bookingReasons li::marker {
   color: rgba(255,255,255,0.65);
 }
+
+/* FORCE Where-to-book visual parity */
+#bookingReasons li {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-main);
+  opacity: 0.95;
+  font-weight: 400;
+}
+
+#bookingReasons li::marker {
+  color: rgba(255,255,255,0.65);
+}
+
+#bookingChannel {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+
+  color: var(--text-main);
+  opacity: 0.97;
+}
+
