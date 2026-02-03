@@ -449,6 +449,12 @@ button {
   line-height: 1.6;
 }
 
+/* Hard-lock booking typography inside the booking card */
+.lux-card #bookingChannel,
+.lux-card #bookingReasons li {
+  opacity: 1 !important;
+}
+
 .lux-card .results-title,
 .lux-card h3 {
   font-size: 12px;
@@ -463,7 +469,6 @@ button {
 #bookingReasons {
   margin: 0;
   padding-left: 18px;
-  font-size: 12px;
   color: var(--text-main);
 }
 
@@ -500,50 +505,26 @@ button {
 /* Title: “Life COO Booking Recommendation” */
 #bookingChannel {
   display: block;
-  font-size: 13px;                 /* 🔥 match exec recap prominence */
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 
-  color: var(--text-main);         /* 🔥 BRIGHT white, not muted */
-  opacity: 0.95;                   /* subtle polish */
+  /* IMPORTANT: no opacity → avoid dull text on glass */
+  color: #f1f5f9;   /* brighter than --text-main */
   margin-bottom: 12px;
 }
 
-/* Bullet text parity */
+/* Booking bullets — investor-grade parity */
 #bookingReasons li {
   font-size: 13px;
   line-height: 1.75;
 
-  color: var(--text-main);     /* 🔥 same as exec recap bullets */
-  opacity: 0.92;               /* premium softness, not dull */
+  /* IMPORTANT: no opacity → avoid dull text */
+  color: #f8fafc;   /* crisp, premium white */
   font-weight: 400;
 }
 
 #bookingReasons li::marker {
-  color: rgba(255,255,255,0.65);
+  color: rgba(248,250,252,0.70);
 }
-
-/* FORCE Where-to-book visual parity */
-#bookingReasons li {
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text-main);
-  opacity: 0.95;
-  font-weight: 400;
-}
-
-#bookingReasons li::marker {
-  color: rgba(255,255,255,0.65);
-}
-
-#bookingChannel {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-
-  color: var(--text-main);
-  opacity: 0.97;
-}
-
