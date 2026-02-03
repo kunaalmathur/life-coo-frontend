@@ -445,7 +445,7 @@ button {
   background: var(--glass);
   box-shadow: var(--shadow-soft);
 
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
@@ -500,22 +500,26 @@ button {
 /* Title: “Life COO Booking Recommendation” */
 #bookingChannel {
   display: block;
-  font-size: 12px;          /* SAME as .results-title */
+  font-size: 13px;                 /* 🔥 match exec recap prominence */
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #cbd5f5;
-  margin-bottom: 10px;
+
+  color: var(--text-main);         /* 🔥 BRIGHT white, not muted */
+  opacity: 0.95;                   /* subtle polish */
+  margin-bottom: 12px;
 }
 
 /* Bullet text parity */
 #bookingReasons li {
   font-size: 13px;
   line-height: 1.75;
+
+  color: var(--text-main);     /* 🔥 same as exec recap bullets */
+  opacity: 0.92;               /* premium softness, not dull */
+  font-weight: 400;
 }
 
-/* Ensure booking section doesn’t visually shrink */
-.lux-card ul,
-.lux-card li {
-  font-size: 12px;
+#bookingReasons li::marker {
+  color: rgba(255,255,255,0.65);
 }
