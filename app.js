@@ -886,8 +886,11 @@ optimizeBtn?.addEventListener("click", async () => {
 function renderBookingRecommendation(br) {
   if (!bookingCard || !br) return;
 
+  //bookingChannel.textContent = br.recommendedChannel || "";
+
   bookingCard.classList.remove("hidden");
-  bookingChannel.textContent = br.recommendedChannel || "";
+  bookingChannel.textContent =
+     "💎 Life COO Booking Recommendation";
 
   bookingReasons.innerHTML = "";
   (br.reasonBullets || []).forEach(reason => {
