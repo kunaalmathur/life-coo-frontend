@@ -242,8 +242,6 @@ button {
 .btn-secondary {
   padding: 9px 16px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
   white-space: nowrap;
   transition: all 0.15s ease;
 }
