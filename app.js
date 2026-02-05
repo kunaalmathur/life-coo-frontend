@@ -11,6 +11,7 @@ const API_BASE = "https://life-coo-realtime-backend.onrender.com";
 
 // Header / drive mode
 const driveToggle = document.getElementById("driveToggle");
+const themeToggle = document.getElementById("themeToggle");
 
 // Agent box + actions
 const agentBox = document.getElementById("agentBox");
@@ -62,6 +63,17 @@ const PROFILE_KEY = "lifeCooFamilyProfile_v1";
 
 // NEW: remember last optimize result globally
 let lastOptimizeResult = null;
+
+// ---------------------------------------------------------------
+// TYPOGRAPHY NORMALIZATION (hyphens, dashes)
+// ---------------------------------------------------------------
+function normalizeDashes(text) {
+  if (!text || typeof text !== "string") return text;
+
+  return text
+    .replace(/[\u2012\u2013\u2014\u2015]/g, "-") // figure dash, en dash, em dash, horizontal bar
+    .replace(/\s*-\s*/g, " - "); // normalize spacing
+}
 
 // ---------------------------------------------------------------
 // UI STATE (Upgrade 2 Step 2)
@@ -514,7 +526,14 @@ if (result.error) {
 
   // Map backend fields → form DOM
   originInput.value = result.origin || "";
+  originInput.addEventListener("focus", () => {
+     originInput.dispatchEvent(new Event("input"));
+  });
+  
   destinationInput.value = result.destination || "";
+  destinationInput.addEventListener("focus", () => {
+     destinationInput.dispatchEvent(new Event("input"));
+  }); 
   datesInput.value = result.datesWindow || "";
   travellersInput.value = result.travellers || "";
   preferencesInput.value = result.preferences || "";
@@ -900,23 +919,10 @@ optimizeBtn?.addEventListener("click", async () => {
 function renderBookingRecommendation(br) {
   if (!bookingCard || !br) return;
 
-  //bookingChannel.textContent = br.recommendedChannel || "";
-
   bookingCard.classList.remove("hidden");
-  bookingChannel.textContent =
-     "💎 Life COO Booking Recommendation";
+  bookingChannel.textContent = "Execution";
 
- bookingReasons.innerHTML = "";
-(br.reasonBullets || []).forEach(reason => {
-  const li = document.createElement("li");
-  li.textContent = reason;
-
-  // 🔒 Normalize bullet spacing
-  li.style.marginBottom = "6px";
-  li.style.lineHeight = "1.45";
-
-  bookingReasons.appendChild(li);
-});
+  bookingReasons.innerHTML = ""; // 🔕 no bullets (intentional)
 
   bookingLinks.innerHTML = "";
   (br.bookingLinks || []).forEach(link => {
@@ -1118,7 +1124,7 @@ function renderBookingVerdict(verdict) {
   line-height:1.45;
 ">
   ${verdict.reasons
-    .map(r => `<li style="margin-bottom:6px;">${r}</li>`)
+    .map(r => `<li style="margin-bottom:6px;">${normalizeDashes(r)}</li>`)
     .join("")}
 </ul>
   `;
@@ -1145,7 +1151,7 @@ function renderResults(data) {
   } else {
     execRecapBullets.forEach((b) => {
       const li = document.createElement("li");
-      li.textContent = b;
+      li.textContent = normalizeDashes(b);
       recapList.appendChild(li);
     });
   }
@@ -1168,7 +1174,7 @@ function renderResults(data) {
       ul.className = "option-bullets";
       (opt.bullets || []).forEach((b) => {
         const li = document.createElement("li");
-        li.textContent = b;
+        li.textContent = normalizeDashes(b);
         ul.appendChild(li);
       });
       block.appendChild(ul);
@@ -1184,7 +1190,7 @@ function renderResults(data) {
   } else {
     riskRadarBullets.forEach((b) => {
       const li = document.createElement("li");
-      li.textContent = b;
+      li.textContent = normalizeDashes(b);
       riskList.appendChild(li);
     });
   }
@@ -1440,4 +1446,26 @@ driveToggle?.addEventListener("click", () => {
 
   // NEW: turn Drive Mode logic on/off (hands-free)
   setDriveMode(isActive);
+});
+
+// ---------------------------------------------------------------
+// THEME TOGGLE (Dark / Light)
+// ---------------------------------------------------------------
+themeToggle?.addEventListener("click", () => {
+  document.body.classList.toggle("light-mode");
+
+  try {
+    const isLight = document.body.classList.contains("light-mode");
+    localStorage.setItem("lifeCooTheme", isLight ? "light" : "dark");
+  } catch (_) {}
+});
+
+// Restore theme on load
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const saved = localStorage.getItem("lifeCooTheme");
+    if (saved === "light") {
+      document.body.classList.add("light-mode");
+    }
+  } catch (_) {}
 });
