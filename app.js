@@ -1001,8 +1001,8 @@ function getBookingVerdict({ hasFamily, flexibility, tripLengthDays, season }) {
 // ---------------------------------------------------------------
 
 function ensureBookingVerdictContainer() {
-  if (!bookingCard || !bookingCard.parentNode) return null;
-
+  if (!bookingCard) return null;
+   
   let verdictEl = document.getElementById("bookingVerdict");
   if (!verdictEl) {
     verdictEl = document.createElement("div");
@@ -1013,7 +1013,9 @@ function ensureBookingVerdictContainer() {
     verdictEl.style.borderRadius = "14px";
     verdictEl.style.background = "rgba(17,24,39,0.85)";
 
-    bookingCard.parentNode.insertBefore(verdictEl, bookingCard);
+    // bookingCard.parentNode.insertBefore(verdictEl, bookingCard);
+    const whereToBookSection = bookingCard.closest(".rhs-section") || bookingCard.parentNode;
+    whereToBookSection.parentNode.insertBefore(verdictEl, whereToBookSection);
   }
   return verdictEl;
 }
