@@ -870,6 +870,18 @@ async function runOptimize() {
   // remember latest result for replay / late recap
   lastOptimizeResult = result;
 
+  // 🔐 Booking Verdict v1 (frontend-only)
+  const verdict = getBookingVerdict({
+    hasFamily: (travellers || "").toLowerCase().includes("kid"),
+    flexibility: datesWindow.toLowerCase().includes("flex") ? "high" : "low",
+    tripLengthDays: 7, // safe beta default
+    season: "winter"   // safe beta default
+  });
+
+  // Render verdict BEFORE backend recommendation (intentional)
+   
+  renderBookingVerdict(verdict); 
+
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
@@ -909,6 +921,78 @@ function renderBookingRecommendation(br) {
     a.textContent = link.label;
     bookingLinks.appendChild(a);
   });
+}
+
+// ---------------------------------------------------------------
+// BOOKING VERDICT LOGIC (v1 - pure, frontend-only)
+// ---------------------------------------------------------------
+
+function getBookingVerdict({ hasFamily, flexibility, tripLengthDays, season }) {
+  // Default: airline-direct bias for v1
+  let verdict = "DIRECT WITH AIRLINE";
+  let confidence = "High";
+  let reasons = [
+    "Priority handling during disruptions",
+    "Simplest path for rebooking and refunds",
+    "Fewer hand-offs during irregular operations"
+  ];
+
+  // Soft downgrade conditions
+  if (!hasFamily && flexibility === "high") {
+    confidence = "Medium";
+    reasons = [
+      "Flexibility allows limited OTA risk",
+      "Airline-direct still preferred for disruption control",
+      "OTA options may surface marginal pricing advantages"
+    ];
+  }
+
+  return { verdict, confidence, reasons };
+}
+
+// ---------------------------------------------------------------
+// BOOKING VERDICT (Frontend-only, v1)
+// ---------------------------------------------------------------
+
+function ensureBookingVerdictContainer() {
+  if (!bookingCard || !bookingCard.parentNode) return null;
+
+  let verdictEl = document.getElementById("bookingVerdict");
+  if (!verdictEl) {
+    verdictEl = document.createElement("div");
+    verdictEl.id = "bookingVerdict";
+    verdictEl.style.marginBottom = "16px";
+    verdictEl.style.padding = "12px 14px";
+    verdictEl.style.border = "1px solid rgba(255,255,255,0.15)";
+    verdictEl.style.borderRadius = "14px";
+    verdictEl.style.background = "rgba(17,24,39,0.85)";
+
+    bookingCard.parentNode.insertBefore(verdictEl, bookingCard);
+  }
+  return verdictEl;
+}
+
+function renderBookingVerdict(verdict) {
+  const container = ensureBookingVerdictContainer();
+  if (!container || !verdict) return;
+
+  container.innerHTML = `
+    <div style="font-size:12px; letter-spacing:0.12em; opacity:0.85; margin-bottom:6px;">
+      BOOKING VERDICT
+    </div>
+
+    <div style="font-size:16px; font-weight:600; margin-bottom:8px;">
+      ${verdict.verdict}
+    </div>
+
+    <ul style="margin:6px 0 8px 18px;">
+      ${verdict.reasons.map(r => `<li>${r}</li>`).join("")}
+    </ul>
+
+    <div style="font-size:12px; opacity:0.7;">
+      Decision confidence: ${verdict.confidence}
+    </div>
+  `;
 }
 
 // ---------------------------------------------------------------
