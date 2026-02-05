@@ -974,7 +974,6 @@ function extractBookingSignals({ input, optimizeResult }) {
 // ---------------------------------------------------------------
 
 function getBookingVerdict({ hasFamily, flexibility, tripLengthDays, season }) {
-  // Default: airline-direct bias for v1
   let verdict = "DIRECT WITH AIRLINE";
   let confidence = "High";
   let reasons = [
@@ -983,17 +982,37 @@ function getBookingVerdict({ hasFamily, flexibility, tripLengthDays, season }) {
     "Fewer hand-offs during irregular operations"
   ];
 
-  // Soft downgrade conditions
   if (!hasFamily && flexibility === "high") {
     confidence = "Medium";
     reasons = [
-      "Flexibility allows limited OTA risk",
+      "Flexibility allows limited third-party risk",
       "Airline-direct still preferred for disruption control",
-      "OTA options may surface marginal pricing advantages"
+      "OTAs may offer marginal pricing advantages"
     ];
   }
 
-  return { verdict, confidence, reasons };
+  let hiddenRisk;
+
+  if (hasFamily) {
+    hiddenRisk =
+      "This booking avoids third-party reaccommodation delays, which typically cause overnight stranding when weather or aircraft swaps disrupt schedules.";
+  } else if (season === "winter") {
+    hiddenRisk =
+      "This booking avoids priority downgrades, which often happen during winter disruption queues on indirect ticketing.";
+  } else if (flexibility === "high") {
+    hiddenRisk =
+      "This booking avoids fragmented refunds, which commonly slow down cancellations when plans change inside short booking windows.";
+  } else {
+    hiddenRisk =
+      "This booking avoids indirect support loops, which can delay resolution when itinerary changes are required.";
+  }
+
+  return {
+    verdict,
+    confidence,
+    reasons,
+    hiddenRisk
+  };
 }
 
 // ---------------------------------------------------------------
@@ -1049,6 +1068,27 @@ function renderBookingVerdict(verdict) {
     ">
       Confidence · ${verdict.confidence}
     </div>
+
+    <div style="
+  margin-bottom:12px;
+">
+  <div style="
+    font-size:11px;
+    letter-spacing:0.18em;
+    opacity:0.6;
+    margin-bottom:6px;
+  ">
+    HIDDEN RISK AVOIDED
+  </div>
+
+  <div style="
+    font-size:13px;
+    line-height:1.55;
+    opacity:0.95;
+  ">
+    ${verdict.hiddenRisk}
+  </div>
+</div>
 
     <ul style="
       margin:0;
