@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------
-   LIFE COO — FRONTEND (Option C, Render-aligned)
+   LIFE COO - FRONTEND (Option C, Render-aligned)
    - Matches Option C index.html
    - Talks to Render backend index.js
    - Stable, minimal, UAT-ready
@@ -172,7 +172,7 @@ function setUIState(nextState, messageOverride = "") {
 
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
-// ✅ NEW: single source of truth — are we currently playing recap audio?
+// ✅ NEW: single source of truth - are we currently playing recap audio?
 let isSpeakingAudio = false;
 let driveModeQueued = false;
 let speakToken = 0; // cancels older in-flight speakSummary calls
@@ -210,7 +210,7 @@ function resumeDriveModeListeningSafely() {
 }
 
 // ---------------------------------------------------------------
-// DRIVE MODE — Upgrade 3A (hands-free core)
+// DRIVE MODE - Upgrade 3A (hands-free core)
 // ---------------------------------------------------------------
 let driveModeActive = false;
 let driveModePrevPlayRecap = null;
@@ -231,7 +231,7 @@ function setDriveMode(isOn) {
 
   // ✅ Drive Mode ON
   if (isOn) {
-    // If recap is currently playing, don't start listening yet — queue it
+    // If recap is currently playing, don't start listening yet - queue it
     if (isSpeakingAudio || uiState === UI_STATES.SPEAKING || activeAudio) {
       driveModeQueued = true;
       setUIState(UI_STATES.SPEAKING, "Drive Mode on. Will listen after recap…");
@@ -245,7 +245,7 @@ function setDriveMode(isOn) {
     return;
   }
 
-  // 🔴 Drive Mode OFF — hard stop voice engine + cancel any queued resume
+  // 🔴 Drive Mode OFF - hard stop voice engine + cancel any queued resume
   rearmAfterEnd = false;
   driveModeQueued = false;
 
@@ -298,7 +298,7 @@ function handleDriveModeCommand(rawText) {
     return true;
   }
 
-  // (Optional) Rewind 10s — only works if audio is currently playing
+  // (Optional) Rewind 10s - only works if audio is currently playing
   // Note: We are NOT listening during playback in Drive Mode, so this is mainly useful after playback ends.
   if (text.includes("rewind 10") || text.includes("rewind ten")) {
     if (activeAudio) {
@@ -544,7 +544,7 @@ aiFillBtn?.addEventListener("click", () => runInterpret(false));
 aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 
 // ---------------------------------------------------------------
-// VOICE INPUT — STREAMING + SANE PAUSE
+// VOICE INPUT - STREAMING + SANE PAUSE
 // ---------------------------------------------------------------
 
 
@@ -704,7 +704,7 @@ recognition.onerror = (event) => {
 
 if (!finalText) {
   if (driveModeActive) {
-    // Do NOT change UI here — let onstart handle it
+    // Do NOT change UI here - let onstart handle it
     setTimeout(() => startListeningDriveMode(), 300);
     return;
   }
@@ -771,7 +771,7 @@ voiceBtn?.addEventListener("click", () => {
       pendingRecapUrl = null;
 
       setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
-      // If Drive Mode is on, don't strand the user — re-arm listening
+      // If Drive Mode is on, don't strand the user - re-arm listening
       resumeDriveModeListeningSafely();
 
     };
@@ -812,7 +812,7 @@ voiceBtn?.addEventListener("click", () => {
 // ==== END VOICE RECOGNITION v2 ====
 
 // ---------------------------------------------------------------
-// OPTIMIZE — form → backend → RHS
+// OPTIMIZE - form → backend → RHS
 // ---------------------------------------------------------------
 async function runOptimize() {
   const origin = originInput.value.trim();
@@ -906,12 +906,17 @@ function renderBookingRecommendation(br) {
   bookingChannel.textContent =
      "💎 Life COO Booking Recommendation";
 
-  bookingReasons.innerHTML = "";
-  (br.reasonBullets || []).forEach(reason => {
-    const li = document.createElement("li");
-    li.textContent = reason;
-    bookingReasons.appendChild(li);
-  });
+ bookingReasons.innerHTML = "";
+(br.reasonBullets || []).forEach(reason => {
+  const li = document.createElement("li");
+  li.textContent = reason;
+
+  // 🔒 Normalize bullet spacing
+  li.style.marginBottom = "6px";
+  li.style.lineHeight = "1.45";
+
+  bookingReasons.appendChild(li);
+});
 
   bookingLinks.innerHTML = "";
   (br.bookingLinks || []).forEach(link => {
@@ -976,20 +981,37 @@ function extractBookingSignals({ input, optimizeResult }) {
 function getBookingVerdict({ hasFamily, flexibility, tripLengthDays, season }) {
   let verdict = "DIRECT WITH AIRLINE";
   let confidence = "High";
-  let reasons = [
+  let reasons;
+
+if (hasFamily) {
+  reasons = [
+    "Higher priority rebooking when traveling with dependents",
+    "Cleaner support path when same-day alternatives are required",
+    "Fewer vendor hand-offs during irregular operations"
+  ];
+} else if (season === "winter") {
+  reasons = [
+    "Faster reaccommodation during weather-driven delays",
+    "Reduced downgrade risk during capacity re-balancing",
+    "Direct access to airline disruption queues"
+  ];
+} else if (flexibility === "high") {
+  reasons = [
+    "Flexibility allows selective use of lower-cost channels",
+    "Airline-direct preserves disruption control if plans shift",
+    "Avoids refund delays across fragmented ticketing"
+  ];
+} else {
+  reasons = [
     "Priority handling during disruptions",
     "Simplest path for rebooking and refunds",
     "Fewer hand-offs during irregular operations"
   ];
+}
 
   if (!hasFamily && flexibility === "high") {
-    confidence = "Medium";
-    reasons = [
-      "Flexibility allows limited third-party risk",
-      "Airline-direct still preferred for disruption control",
-      "OTAs may offer marginal pricing advantages"
-    ];
-  }
+  confidence = "Medium";
+}
 
   let hiddenRisk;
 
@@ -1090,13 +1112,15 @@ function renderBookingVerdict(verdict) {
   </div>
 </div>
 
-    <ul style="
-      margin:0;
-      padding-left:18px;
-      line-height:1.6;
-    ">
-      ${verdict.reasons.map(r => `<li>${r}</li>`).join("")}
-    </ul>
+<ul style="
+  margin:0;
+  padding-left:18px;
+  line-height:1.45;
+">
+  ${verdict.reasons
+    .map(r => `<li style="margin-bottom:6px;">${r}</li>`)
+    .join("")}
+</ul>
   `;
 }
 
