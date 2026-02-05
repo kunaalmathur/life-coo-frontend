@@ -977,21 +977,38 @@ function renderBookingVerdict(verdict) {
   if (!container || !verdict) return;
 
   container.innerHTML = `
-    <div style="font-size:12px; letter-spacing:0.12em; opacity:0.85; margin-bottom:6px;">
+    <div style="
+      font-size:11px;
+      letter-spacing:0.18em;
+      opacity:0.6;
+      margin-bottom:10px;
+    ">
       BOOKING VERDICT
     </div>
 
-    <div style="font-size:16px; font-weight:600; margin-bottom:8px;">
+    <div style="
+      font-size:20px;
+      font-weight:600;
+      margin-bottom:6px;
+    ">
       ${verdict.verdict}
     </div>
 
-    <ul style="margin:6px 0 8px 18px;">
+    <div style="
+      font-size:12px;
+      opacity:0.6;
+      margin-bottom:14px;
+    ">
+      Confidence · ${verdict.confidence}
+    </div>
+
+    <ul style="
+      margin:0;
+      padding-left:18px;
+      line-height:1.6;
+    ">
       ${verdict.reasons.map(r => `<li>${r}</li>`).join("")}
     </ul>
-
-    <div style="font-size:12px; opacity:0.7;">
-      Decision confidence: ${verdict.confidence}
-    </div>
   `;
 }
 
