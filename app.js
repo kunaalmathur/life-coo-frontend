@@ -870,13 +870,15 @@ async function runOptimize() {
   // remember latest result for replay / late recap
   lastOptimizeResult = result;
 
-  // 🔐 Booking Verdict v1 (frontend-only)
-  const verdict = getBookingVerdict({
-    hasFamily: (travellers || "").toLowerCase().includes("kid"),
-    flexibility: datesWindow.toLowerCase().includes("flex") ? "high" : "low",
-    tripLengthDays: 7, // safe beta default
-    season: "winter"   // safe beta default
-  });
+  const verdictSignals = extractBookingSignals({
+  input: {
+    travellers,
+    datesWindow
+  },
+  optimizeResult: result
+});
+
+const verdict = getBookingVerdict(verdictSignals);
 
   // Render verdict BEFORE backend recommendation (intentional)
    
@@ -921,6 +923,50 @@ function renderBookingRecommendation(br) {
     a.textContent = link.label;
     bookingLinks.appendChild(a);
   });
+}
+
+function extractBookingSignals({ input, optimizeResult }) {
+  const travellersText = (input.travellers || "").toLowerCase();
+  const datesText = (input.datesWindow || "").toLowerCase();
+
+  const hasFamily =
+    travellersText.includes("kid") ||
+    travellersText.includes("child") ||
+    travellersText.includes("infant");
+
+  const flexibility =
+    datesText.includes("flex") ||
+    datesText.includes("±")
+      ? "high"
+      : "low";
+
+  // Try to infer trip length from routing options if present
+  let tripLengthDays = 7; // fallback
+  if (Array.isArray(optimizeResult?.routingOptions)) {
+    const text = optimizeResult.routingOptions
+      .map(opt => (opt.bullets || []).join(" "))
+      .join(" ");
+
+    const daysMatch = text.match(/(\d+)\s*(day|night)/i);
+    if (daysMatch) {
+      tripLengthDays = parseInt(daysMatch[1], 10);
+    }
+  }
+   
+  // Season inference (safe & conservative for v1)
+  let season = "shoulder";
+  if (datesText.includes("dec") || datesText.includes("jan") || datesText.includes("feb")) {
+    season = "winter";
+  } else if (datesText.includes("jul") || datesText.includes("aug")) {
+    season = "summer";
+  }
+
+  return {
+    hasFamily,
+    flexibility,
+    tripLengthDays,
+    season
+  };
 }
 
 // ---------------------------------------------------------------
