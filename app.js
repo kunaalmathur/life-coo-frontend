@@ -25,7 +25,6 @@ const destinationInput = document.getElementById("destination");
 const datesInput = document.getElementById("dates");
 const travellersInput = document.getElementById("travellers");
 const preferencesInput = document.getElementById("preferences");
-const outputStyleSelect = document.getElementById("outputStyle");
 const notesInput = document.getElementById("notes");
 
 // Sample + profile
@@ -892,8 +891,6 @@ if (!origin || !destination) {
   const travellers = travellersInput.value.trim();
   const preferences = preferencesInput.value.trim();
   const notes = notesInput.value.trim();
-  const outputStyle =
-    (outputStyleSelect.value || "Executive summary (C-suite / family office)").trim();
 
   setUIState(UI_STATES.OPTIMIZING, "Optimizing your routing…");
 
@@ -908,7 +905,6 @@ if (!origin || !destination) {
     datesWindow,
     travellers,
     preferences,
-    outputStyle,
     notes,
   };
 
@@ -933,6 +929,9 @@ if (!origin || !destination) {
 
   // remember latest result for replay / late recap
   lastOptimizeResult = result;
+  // Ensure origin/destination are present for spoken risk safety
+  result.origin = origin;
+  result.destination = destination;
 
   const verdictSignals = extractBookingSignals({
   input: {
@@ -1215,6 +1214,28 @@ function showTapToPlayRecap(url) {
 }
 
 // ---------------------------------------------------------------
+// SPOKEN RISK SAFETY — single source of truth
+// ---------------------------------------------------------------
+function isSafeToNarrateRisk(data) {
+  if (!data) return false;
+
+  // Must have a fully defined trip
+  if (!data.origin || !data.destination) return false;
+
+  // Must be a completed optimization
+  if (!Array.isArray(data.routingOptions) || !data.routingOptions.length) {
+    return false;
+  }
+
+  // Risk must be authoritative (not fallback / partial)
+  if (!Array.isArray(data.riskRadarBullets) || !data.riskRadarBullets.length) {
+    return false;
+  }
+
+  return true;
+}
+
+// ---------------------------------------------------------------
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
 async function speakSummary(data, { force = false } = {}) {
@@ -1228,6 +1249,15 @@ async function speakSummary(data, { force = false } = {}) {
     ]
   };
 }
+  // 🚨 Spoken risk guardrail — applies to ALL degraded / partial states
+  if (!isSafeToNarrateRisk(data)) {
+    data = {
+      ...data,
+      riskRadarBullets: [],
+      riskLevel: null
+    };
+  }
+   
   setUIState(UI_STATES.SPEAKING);
   const myToken = ++speakToken;
   try {
@@ -1356,7 +1386,6 @@ sampleBtn?.addEventListener("click", () => {
   datesInput.value = "Mid-July, flexible ±2 days";
   travellersInput.value = "2 adults, 2 kids";
   preferencesInput.value = "1 stop, layover under 4 hours, daytime flights";
-  outputStyleSelect.value = "Executive summary (C-suite / family office)";
   notesInput.value = "Kids are 8 and 10; prefer calm connections.";
   showRoutingUpdated("Sample trip loaded. Ready to optimize.");
 });
@@ -1369,7 +1398,6 @@ function saveProfile() {
       datesWindow: datesInput.value,
       travellers: travellersInput.value,
       preferences: preferencesInput.value,
-      outputStyle: outputStyleSelect.value,
       notes: notesInput.value
     };
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
@@ -1391,7 +1419,6 @@ loadProfileBtn?.addEventListener("click", () => {
     datesInput.value = profile.datesWindow || "";
     travellersInput.value = profile.travellers || "";
     preferencesInput.value = profile.preferences || "";
-    outputStyleSelect.value = profile.outputStyle || "";
     notesInput.value = profile.notes || "";
     setUIState(UI_STATES.IDLE, "Saved family profile loaded.");
   } catch (err) {
