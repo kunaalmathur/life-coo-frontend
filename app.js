@@ -970,8 +970,8 @@ result.bookingVerdict = verdict;
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
-  if (playRecapCheckbox?.checked) {
-    speakSummary(result);
+  if (playRecapCheckbox?.checked || driveModeActive) {
+  speakSummary(result);
   }
 }
 
