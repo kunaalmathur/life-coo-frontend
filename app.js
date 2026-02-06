@@ -1259,6 +1259,7 @@ function isSafeToNarrateRisk(data) {
 // OPTIONAL: LLM ENRICHMENT (safe fallback)
 // ---------------------------------------------------------------
 async function enrichRecapWithLLM(bullets) {
+  if (!ENABLE_LLM_ENRICHMENT) return bullets;
   try {
     const res = await fetch(`${API_BASE}/llm-enrich`, {
       method: "POST",
