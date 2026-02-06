@@ -11,7 +11,6 @@ const API_BASE = "https://life-coo-realtime-backend.onrender.com";
 
 // Header / drive mode
 const driveToggle = document.getElementById("driveToggle");
-const themeToggle = document.getElementById("themeToggle");
 
 // Agent box + actions
 const agentBox = document.getElementById("agentBox");
@@ -353,21 +352,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ✅ Normalize airport dropdown UX
   normalizeAirportDropdown(originInput);
   normalizeAirportDropdown(destinationInput);
-   
-  // Restore saved theme
-  try {
-    const saved = localStorage.getItem("lifeCooTheme");
-    if (saved === "light") {
-      document.body.classList.add("light-mode");
-    }
-  } catch (_) {}
 
-if (themeToggle) {
-  themeToggle.classList.toggle(
-    "drive-switch-active",
-    document.body.classList.contains("light-mode")
-     );
-   }
 });
 
 // ---------------------------------------------------------------
@@ -1487,10 +1472,11 @@ driveToggle?.addEventListener("click", () => {
 // ---------------------------------------------------------------
 // THEME TOGGLE (Dark / Light)
 // ---------------------------------------------------------------
-themeToggle?.addEventListener("click", () => {
-  const isLight = document.body.classList.toggle("light-mode");
-  themeToggle.classList.toggle("drive-switch-active", isLight);
-  try {
-    localStorage.setItem("lifeCooTheme", isLight ? "light" : "dark");
-  } catch (_) {}
-});
+// Light mode disabled in beta (intentional)
+//themeToggle?.addEventListener("click", () => {
+//const isLight = document.body.classList.toggle("light-mode");
+//themeToggle.classList.toggle("drive-switch-active", isLight);
+//try {
+//localStorage.setItem("lifeCooTheme", isLight ? "light" : "dark");
+//} catch (_) {}
+//});
