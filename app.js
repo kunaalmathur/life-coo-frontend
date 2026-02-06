@@ -1234,12 +1234,15 @@ function showTapToPlayRecap(url) {
 // ---------------------------------------------------------------
 async function speakSummary(data, { force = false } = {}) {
   if (data.bookingVerdict) {
-  data.execRecapBullets = [
-    ...(data.execRecapBullets || []),
-    `Booking recommendation: ${data.bookingVerdict.verdict}.`,
-    data.bookingVerdict.hiddenRisk
-     ];
-   } 
+  data = {
+    ...data,
+    execRecapBullets: [
+      ...(data.execRecapBullets || []),
+      `Booking recommendation: ${data.bookingVerdict.verdict}.`,
+      data.bookingVerdict.hiddenRisk
+    ]
+  };
+}
   setUIState(UI_STATES.SPEAKING);
   const myToken = ++speakToken;
   try {
