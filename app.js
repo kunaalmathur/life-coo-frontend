@@ -1236,19 +1236,29 @@ function isSafeToNarrateRisk(data) {
 }
 
 // ---------------------------------------------------------------
-// SPEAK SUMMARY (cleaner, de-garbled recap)
+// SPEAK SUMMARY
+// - non-mutating recap construction
+// - spoken risk guardrails (single source of truth)
+// - iOS autoplay + Drive Mode safe re-arming
 // ---------------------------------------------------------------
+
 async function speakSummary(data, { force = false } = {}) {
-  if (data.bookingVerdict) {
-  data = {
-    ...data,
-    execRecapBullets: [
-      ...(data.execRecapBullets || []),
-      `Booking recommendation: ${data.bookingVerdict.verdict}.`,
-      data.bookingVerdict.hiddenRisk
-    ]
-  };
+  const recapBullets = Array.isArray(data.execRecapBullets)
+  ? [...data.execRecapBullets]
+  : [];
+
+if (data.bookingVerdict) {
+  recapBullets.push(
+    `Booking recommendation: ${data.bookingVerdict.verdict}.`,
+    data.bookingVerdict.hiddenRisk
+  );
 }
+
+data = {
+  ...data,
+  execRecapBullets: recapBullets
+};
+   
   // 🚨 Spoken risk guardrail — applies to ALL degraded / partial states
   if (!isSafeToNarrateRisk(data)) {
     data = {
@@ -1493,7 +1503,7 @@ driveToggle?.addEventListener("click", () => {
 
   // 🔁 Reflect state visually (CSS / SVG reads from this)
   driveToggle.classList.toggle("drive-switch-active", isTurningOn);
-  driveToggle.setAttribute("aria-pressed", String(isTurningOn)); // 👈 ADD
+  driveToggle.setAttribute("aria-checked", String(isTurningOn)); // ✅ correct
   document.body.classList.toggle("drive-mode", isTurningOn);
 });
 
