@@ -122,9 +122,10 @@ We are a family of 5 including a senior 80+ and two kids, traveling from Calgary
                 class="input airport-input"
                 placeholder="Calgary (YYC)"
                 autocomplete="off"
+                list="airportList"
               />
-              <div class="airport-dropdown hidden"></div>
-            </div>
+            <div class="airport-dropdown hidden"></div>
+          </div>
 
             <div class="field">
               <label>Destination</label>
@@ -133,6 +134,7 @@ We are a family of 5 including a senior 80+ and two kids, traveling from Calgary
                 class="input airport-input"
                 placeholder="Melbourne (MEL)"
                 autocomplete="off"
+                list="airportList"
               />
               <div class="airport-dropdown hidden"></div>
             </div>
@@ -261,6 +263,9 @@ We are a family of 5 including a senior 80+ and two kids, traveling from Calgary
     </div>
   </div>
 
+  <!-- Airport Autocomplete Source -->
+  <datalist id="airportList"></datalist>
+  
   <!-- App Logic -->
   <script src="app.js"></script>
 
