@@ -642,3 +642,51 @@ body.light-mode .badge {
 body.light-mode .panel-right ul li::marker {
   color: rgba(15, 23, 42, 0.6);
 }
+
+/* =========================================================
+   DRIVE TOGGLE (SVG) — Apple-grade steering wheel
+   Does NOT affect theme toggle
+   ========================================================= */
+
+.drive-switch-svg {
+  justify-content: center;
+  padding: 0; /* override emoji-knob padding */
+}
+
+/* kill the emoji knob for the SVG-style toggle */
+.drive-switch-svg::before {
+  content: "";
+  display: none;
+}
+
+/* icon styling */
+.drive-switch-svg .drive-icon {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.82);
+  opacity: 0.92;
+  transition:
+    transform 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s ease,
+    filter 0.25s ease,
+    opacity 0.25s ease;
+}
+
+/* active state: subtle “engaged” feel */
+.drive-switch-svg.drive-switch-active .drive-icon {
+  transform: rotate(90deg);
+  color: rgba(255, 255, 255, 0.98);
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.45));
+  opacity: 1;
+}
+
+/* light mode parity */
+body.light-mode .drive-switch-svg .drive-icon {
+  color: rgba(15, 23, 42, 0.72);
+  filter: none;
+}
+
+body.light-mode .drive-switch-svg.drive-switch-active .drive-icon {
+  color: rgba(15, 23, 42, 0.92);
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.25));
+}
