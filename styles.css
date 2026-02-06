@@ -573,8 +573,10 @@ button#sampleBtn:hover {
 }
 
 /* prevent text selection / weird drag */
-.drive-switch,
-.drive-switch * {
+.drive-switch {
   user-select: none;
+}
+
+.drive-switch * {
   pointer-events: none;
 }
