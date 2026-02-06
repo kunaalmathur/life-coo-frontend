@@ -100,6 +100,16 @@ let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
 // ✅ iOS audio unlock (Drive Mode uses the toggle as the one "gesture" for the whole session)
 let audioUnlocked = false;
 
+function speakIfDriveMode(message) {
+  if (!driveModeActive || !message) return;
+
+  speakSummary({
+    execRecapBullets: [message],
+    routingOptions: [],
+    riskRadarBullets: []
+  }, { force: true });
+}
+
 async function unlockAudioOnce() {
   if (audioUnlocked) return true;
 
@@ -393,22 +403,21 @@ async function hydrateAirportDatalist() {
 function normalizeAirportDropdown(inputEl) {
   if (!inputEl) return;
 
-  let cachedValue = "";
+  let lastCommittedValue = inputEl.value || "";
 
   inputEl.addEventListener("focus", () => {
-    cachedValue = inputEl.value;
-
-    // Clear value temporarily so browser shows ALL datalist options
+    lastCommittedValue = inputEl.value;
     inputEl.value = "";
-
-    // Force datalist to open
     inputEl.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
+  inputEl.addEventListener("change", () => {
+    lastCommittedValue = inputEl.value;
+  });
+
   inputEl.addEventListener("blur", () => {
-    // If user didn’t select anything, restore previous value
-    if (!inputEl.value && cachedValue) {
-      inputEl.value = cachedValue;
+    if (!inputEl.value) {
+      inputEl.value = lastCommittedValue;
     }
   });
 }
@@ -573,8 +582,10 @@ async function runInterpret(autoOptimize = false) {
   if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = false;
 
 if (result.error) {
-   setUIState(UI_STATES.ERROR, "Couldn’t understand. Please try rephrasing.");
-   return;
+  const msg = "I couldn't understand that. Please rephrase your trip.";
+  setUIState(UI_STATES.ERROR, msg);
+  speakIfDriveMode(msg);
+  return;
 }
 
   // Map backend fields → form DOM
@@ -590,9 +601,11 @@ if (result.error) {
   if (autoOptimize) {
      // If interpret didn’t extract the minimum needed fields, don’t pretend we can optimize.
      if (!originInput.value.trim() || !destinationInput.value.trim()) {
-       setUIState(UI_STATES.ERROR, "I understood parts of it, but I still need origin + destination.");
+       const msg = "I understood part of your request, but I still need the origin and destination.";
+       setUIState(UI_STATES.ERROR, msg);
+       speakIfDriveMode(msg);
        return;
-  }
+     }
 
      setUIState(UI_STATES.IDLE, "Trip understood. Optimizing now…");
      await runOptimize();
@@ -882,10 +895,12 @@ async function runOptimize() {
   const origin = originInput.value.trim();
   const destination = destinationInput.value.trim();
 
-  if (!origin || !destination) {
-    setUIState(UI_STATES.ERROR, "Origin and destination are required.");
-    return;
-  }
+if (!origin || !destination) {
+  const msg = "Please tell me both the origin and destination.";
+  setUIState(UI_STATES.ERROR, msg);
+  speakIfDriveMode(msg);
+  return;
+}
   setUIState(UI_STATES.OPTIMIZING);
 
   const datesWindow = datesInput.value.trim();
@@ -943,6 +958,7 @@ async function runOptimize() {
 });
 
 const verdict = getBookingVerdict(verdictSignals);
+result.bookingVerdict = verdict;   
 
   // Render verdict BEFORE backend recommendation (intentional)
    
@@ -1264,6 +1280,13 @@ function showTapToPlayRecap(url) {
 // SPEAK SUMMARY (cleaner, de-garbled recap)
 // ---------------------------------------------------------------
 async function speakSummary(data, { force = false } = {}) {
+  if (data.bookingVerdict) {
+  data.execRecapBullets = [
+    ...(data.execRecapBullets || []),
+    `Booking recommendation: ${data.bookingVerdict.verdict}.`,
+    data.bookingVerdict.hiddenRisk
+     ];
+   } 
   setUIState(UI_STATES.SPEAKING);
   const myToken = ++speakToken;
   try {
