@@ -186,6 +186,30 @@ function setUIState(nextState, messageOverride = "") {
   }
 } // ✅ THIS closes setUIState
 
+// ---------------------------------------------------------------
+// DRIVE MODE — SAFE SPOKEN MESSAGES (single source of truth)
+// ---------------------------------------------------------------
+function speakIfDriveMode(message) {
+  const msg = (message || "").trim();
+  if (!msg) return;
+
+  // Only speak when Drive Mode OR recap playback is allowed
+  if (!driveModeActive && !playRecapCheckbox?.checked) return;
+
+  // Reuse the existing TTS pipeline safely (no risk narration)
+  speakSummary(
+    {
+      origin: "N/A",
+      destination: "N/A",
+      execRecapBullets: [msg],
+      routingOptions: [],
+      riskRadarBullets: [],
+      riskLevel: null
+    },
+    { force: true }
+  );
+}
+
 // NEW: prevent overlapping recap audio
 let activeAudio = null;
 // ✅ NEW: single source of truth - are we currently playing recap audio?
@@ -564,20 +588,21 @@ if (result.error) {
 }
 
   // Map backend fields → form DOM
-  originInput.value = result.origin || "";
-  
-  destinationInput.value = result.destination || "";
-  
-  datesInput.value = result.datesWindow || "";
-  travellersInput.value = result.travellers || "";
-  preferencesInput.value = result.preferences || "";
-  notesInput.value = result.notes || "";
+  // Only overwrite fields if backend actually extracted something
+   if (result.origin) originInput.value = result.origin;
+   if (result.destination) destinationInput.value = result.destination;
+   if (result.datesWindow) datesInput.value = result.datesWindow;
+   if (result.travellers) travellersInput.value = result.travellers;
+   if (result.preferences) preferencesInput.value = result.preferences;
+   if (result.notes) notesInput.value = result.notes;
 
   if (autoOptimize) {
      // If interpret didn’t extract the minimum needed fields, don’t pretend we can optimize.
      if (!originInput.value.trim() || !destinationInput.value.trim()) {
        const msg = "I understood part of your request, but I still need the origin and destination.";
        lastOptimizeResult = null; 
+       pendingRecapUrl = null;
+       if (activeAudio) { activeAudio.pause(); activeAudio = null; }
        setUIState(UI_STATES.ERROR, msg);
        speakIfDriveMode(msg);
        return;
