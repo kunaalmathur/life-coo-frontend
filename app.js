@@ -1288,6 +1288,21 @@ async function enrichRecapWithLLM(bullets) {
 }
 
 // ---------------------------------------------------------------
+// SPOKEN BOOKING SUMMARY (safe, frontend-only)
+// ---------------------------------------------------------------
+function getSpokenBookingSummary(data) {
+  if (!data || !data.bookingVerdict) return [];
+
+  const { verdict, hiddenRisk } = data.bookingVerdict;
+  if (!verdict || !hiddenRisk) return [];
+
+  return [
+    `Where to book: ${verdict}.`,
+    hiddenRisk
+  ];
+}
+
+// ---------------------------------------------------------------
 // SPEAK SUMMARY
 // - non-mutating recap construction
 // - spoken risk guardrails (single source of truth)
@@ -1299,13 +1314,9 @@ async function speakSummary(data, { force = false } = {}) {
   ? [...data.execRecapBullets]
   : [];
 
-// ✅ Inject booking guidance into spoken recap (non-mutating)
-if (data.bookingVerdict) {
-  recapBullets.push(
-    `Booking recommendation: ${data.bookingVerdict.verdict}.`,
-    data.bookingVerdict.hiddenRisk
-  );
-}
+// ✅ Inject spoken booking summary (single source of truth)
+const bookingSpokenSummary = getSpokenBookingSummary(data);
+recapBullets.push(...bookingSpokenSummary);
 
 const enrichedBullets = ENABLE_LLM_ENRICHMENT
   ? await enrichRecapWithLLM(recapBullets)
@@ -1442,7 +1453,6 @@ audio.play().catch(async (err) => {
     setUIState(UI_STATES.ERROR, "Could not play spoken recap.");
   }
 }
-
 
 // ---------------------------------------------------------------
 // SAMPLE + PROFILE
