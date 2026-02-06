@@ -67,12 +67,18 @@ let lastOptimizeResult = null;
 // ---------------------------------------------------------------
 // TYPOGRAPHY NORMALIZATION (hyphens, dashes)
 // ---------------------------------------------------------------
+
 function normalizeDashes(text) {
   if (!text || typeof text !== "string") return text;
 
   return text
-    .replace(/[\u2012\u2013\u2014\u2015]/g, "-") // figure dash, en dash, em dash, horizontal bar
-    .replace(/\s*-\s*/g, " - "); // normalize spacing
+    // Normalize long dashes → spaced hyphen
+    .replace(/[\u2012\u2013\u2014\u2015]/g, " - ")
+    // Repair real hyphenated words (same-day, hand-offs)
+    .replace(/\b(\w+)\s-\s(\w+)\b/g, "$1-$2")
+    // Collapse extra whitespace
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 // ---------------------------------------------------------------
@@ -90,7 +96,6 @@ const UI_STATES = {
 let uiState = UI_STATES.IDLE;
 
 let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
-let pendingRecapBlob = null;  // optional
 
 // ✅ iOS audio unlock (Drive Mode uses the toggle as the one "gesture" for the whole session)
 let audioUnlocked = false;
@@ -346,6 +351,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.add("light-mode");
     }
   } catch (_) {}
+
+if (themeToggle) {
+  themeToggle.classList.toggle(
+    "drive-switch-active",
+    document.body.classList.contains("light-mode")
+     );
+   }
 });
 
 // ---------------------------------------------------------------
@@ -601,9 +613,6 @@ aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 // ---------------------------------------------------------------
 // VOICE INPUT - STREAMING + SANE PAUSE
 // ---------------------------------------------------------------
-
-
-/* 🔽🔽🔽 PASTE BLOCK C RIGHT HERE 🔽🔽🔽 */
 
 function startListeningDriveMode() {
   if (micLockedForPlayback) return;
@@ -937,7 +946,10 @@ const verdict = getBookingVerdict(verdictSignals);
 
   // Render verdict BEFORE backend recommendation (intentional)
    
-  renderBookingVerdict(verdict); 
+  renderBookingVerdict(verdict);
+  renderBookingRecommendation({
+     bookingLinks: result.bookingLinks || []
+  });
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
@@ -955,9 +967,16 @@ function renderBookingRecommendation(br) {
   if (!bookingCard || !br) return;
 
   bookingCard.classList.remove("hidden");
+
   bookingChannel.textContent = "Where to book";
 
-  bookingReasons.innerHTML = ""; // 🔕 no bullets (intentional)
+  // Executive non-bulleted guidance (intentional)
+  bookingReasons.innerHTML = `
+    <div style="font-size:13px; line-height:1.55;">
+      Booking directly with the airline provides stronger control during
+      disruptions and ensures priority re-accommodation when plans change.
+    </div>
+  `;
 
   bookingLinks.innerHTML = "";
   (br.bookingLinks || []).forEach(link => {
@@ -1203,7 +1222,7 @@ function renderResults(data) {
 
       const title = document.createElement("div");
       title.className = "option-title";
-      title.textContent = opt.title || "Option";
+      title.textContent = normalizeDashes(opt.title || "Option");
       block.appendChild(title);
 
       const ul = document.createElement("ul");
@@ -1490,10 +1509,9 @@ driveToggle?.addEventListener("click", () => {
 // THEME TOGGLE (Dark / Light)
 // ---------------------------------------------------------------
 themeToggle?.addEventListener("click", () => {
-  document.body.classList.toggle("light-mode");
-
+  const isLight = document.body.classList.toggle("light-mode");
+  themeToggle.classList.toggle("drive-switch-active", isLight);
   try {
-    const isLight = document.body.classList.contains("light-mode");
     localStorage.setItem("lifeCooTheme", isLight ? "light" : "dark");
   } catch (_) {}
 });
