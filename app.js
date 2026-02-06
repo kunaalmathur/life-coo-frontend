@@ -1493,6 +1493,7 @@ driveToggle?.addEventListener("click", () => {
 
   // 🔁 Reflect state visually (CSS / SVG reads from this)
   driveToggle.classList.toggle("drive-switch-active", isTurningOn);
+  driveToggle.setAttribute("aria-pressed", String(isTurningOn)); // 👈 ADD
   document.body.classList.toggle("drive-mode", isTurningOn);
 });
 
