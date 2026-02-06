@@ -335,6 +335,10 @@ document.addEventListener("DOMContentLoaded", () => {
   hydrateAirportDatalist();
   resetResults();
 
+  // ✅ Normalize airport dropdown UX
+  normalizeAirportDropdown(originInput);
+  normalizeAirportDropdown(destinationInput);
+   
   // Restore saved theme
   try {
     const saved = localStorage.getItem("lifeCooTheme");
@@ -368,6 +372,35 @@ async function hydrateAirportDatalist() {
 // ---------------------------------------------------------------
 // BASIC UI HELPERS
 // ---------------------------------------------------------------
+
+// ---------------------------------------------------------------
+// AIRPORT INPUT NORMALIZATION (Premium UX)
+// Forces full datalist on focus even when value is prefilled
+// ---------------------------------------------------------------
+
+function normalizeAirportDropdown(inputEl) {
+  if (!inputEl) return;
+
+  let cachedValue = "";
+
+  inputEl.addEventListener("focus", () => {
+    cachedValue = inputEl.value;
+
+    // Clear value temporarily so browser shows ALL datalist options
+    inputEl.value = "";
+
+    // Force datalist to open
+    inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  inputEl.addEventListener("blur", () => {
+    // If user didn’t select anything, restore previous value
+    if (!inputEl.value && cachedValue) {
+      inputEl.value = cachedValue;
+    }
+  });
+}
+
 function showRoutingUpdated(message) {
   if (!routingUpdated) return;
   routingUpdated.textContent = message || "Routing updated";
@@ -534,14 +567,9 @@ if (result.error) {
 
   // Map backend fields → form DOM
   originInput.value = result.origin || "";
-  originInput.addEventListener("focus", () => {
-     originInput.dispatchEvent(new Event("input"));
-  });
   
   destinationInput.value = result.destination || "";
-  destinationInput.addEventListener("focus", () => {
-     destinationInput.dispatchEvent(new Event("input"));
-  }); 
+  
   datesInput.value = result.datesWindow || "";
   travellersInput.value = result.travellers || "";
   preferencesInput.value = result.preferences || "";
