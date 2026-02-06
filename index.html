@@ -34,7 +34,7 @@
     id="driveToggle"
     class="drive-switch"
     title="Toggle Drive Mode"
-    data-icon="🚗"
+    data-icon="🧭"
   ></div>
 
   <div
@@ -54,7 +54,7 @@
       <div class="panel panel-left">
 
         <h2 class="panel-title">Trip Request</h2>
-        <p class="panel-subtitle">Describe your trip in natural language — or fill the form below.</p>
+        <p class="panel-subtitle">Describe your trip in natural language <span class="subtitle-dot">•</span> or fill the form below.</p>
 
         <!-- Agent Box -->
         <div id="agentBox" class="agent-box">
@@ -207,11 +207,15 @@ We are a family of 5 including a senior 80+ and two kids, traveling from Calgary
         </div>
 
         <!-- BOOKING RECOMMENDATION (BETA HOOK) -->
-        <div class="results-section">
+        <div class="results-section rhs-section">
           <h3 class="results-title">Where to book</h3>
-          <div class="results-list">
-            Direct airline booking is recommended to maintain control during disruptions
-            and preserve priority re-accommodation.
+          <div id="bookingCard" class="lux-card">
+            <span id="bookingChannel">Where to book</span>
+            <div id="bookingReasons" class="results-list">
+              Direct airline booking is recommended to maintain control during disruptions
+              and preserve priority re-accommodation.
+            </div>
+            <div id="bookingLinks" class="lux-actions"></div>
           </div>
         </div>
         
