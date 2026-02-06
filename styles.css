@@ -602,3 +602,20 @@ button#sampleBtn:hover {
   border-color: rgba(56, 189, 248, 0.9);
   box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
 }
+
+/* ---------------------------------------------------------
+   DRIVE MODE — EXECUTIVE TOGGLE (BETA)
+---------------------------------------------------------- */
+
+.drive-toggle-btn {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 8px 14px;
+  border-radius: 10px;
+}
+
+.drive-toggle-btn.drive-switch-active {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
