@@ -87,16 +87,26 @@ We are a family of 5 including a senior 80+ and two kids, traveling from Calgary
           <div class="form-row">
             <div class="field">
               <label>Origin</label>
-              <input id="origin" list="airportList" class="input" placeholder="Calgary (YYC)" />
+              <input
+                id="origin"
+                class="input airport-input"
+                placeholder="Calgary (YYC)"
+                autocomplete="off"
+              />
+              <div class="airport-dropdown hidden"></div>
             </div>
 
             <div class="field">
               <label>Destination</label>
-              <input id="destination" list="airportList" class="input" placeholder="Melbourne (MEL)" />
+              <input
+                id="destination"
+                class="input airport-input"
+                placeholder="Melbourne (MEL)"
+                autocomplete="off"
+              />
+              <div class="airport-dropdown hidden"></div>
             </div>
           </div>
-
-          <datalist id="airportList"></datalist>
 
           <div class="form-row">
             <div class="field">
