@@ -686,6 +686,77 @@ body.light-mode .drive-switch-svg .drive-icon {
   filter: none;
 }
 
+/* ===============================================================
+   DRIVE MODE TOGGLE — STEERING WHEEL (SF-SYMBOL STYLE)
+   =============================================================== */
+
+.drive-switch-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.06);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.drive-switch-svg:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.drive-switch-svg .drive-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ACTIVE = DRIVE MODE ON */
+.drive-switch-active.drive-switch-svg {
+  color: #38bdf8; /* Apple-ish cyan */
+  background: rgba(56, 189, 248, 0.15);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.4),
+              0 0 18px rgba(56, 189, 248, 0.35);
+}
+
+
+/* ===============================================================
+   THEME TOGGLE — VISUAL CONSISTENCY
+   =============================================================== */
+
+#themeToggle.drive-switch {
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+#themeToggle.drive-switch:hover {
+  transform: translateY(-1px);
+}
+
+
+/* ===============================================================
+   AIRPORT INPUT POLISH
+   =============================================================== */
+
+.airport-input {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.airport-input:focus {
+  border-color: rgba(56, 189, 248, 0.9);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35);
+}
+
 body.light-mode .drive-switch-svg.drive-switch-active .drive-icon {
   color: rgba(15, 23, 42, 0.92);
   filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.25));
