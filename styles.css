@@ -103,39 +103,6 @@ body {
   color: var(--text-muted);
 }
 
-.drive-switch {
-  width: 46px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--glass);
-  border: 1px solid var(--glass-border);
-  position: relative;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.25s ease;
-}
-
-.drive-switch-active {
-  background: rgba(56, 189, 248, 0.35);
-  border-color: rgba(56, 189, 248, 0.75);
-  box-shadow: 0 0 15px var(--accent-glow);
-}
-
-.drive-thumb {
-  width: 18px;
-  height: 18px;
-  background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-  border-radius: 999px;
-  position: absolute;
-  left: 3px;
-  transition: transform 0.25s ease;
-}
-
-.drive-switch-active .drive-thumb {
-  transform: translateX(22px);
-}
-
 /* -------------------------------------------------------------
    LAYOUT
 -------------------------------------------------------------- */
@@ -516,22 +483,6 @@ button {
   color: #ffffff;
 }
 
-.panel-right #bookingReasons {
-  padding-left: 24px;
-}
-
-.panel-right #bookingReasons li {
-  font-size: 15px;
-  line-height: 1.9;
-  color: #ffffff;
-  font-weight: 400;
-  margin-bottom: 12px;
-}
-
-.panel-right #bookingReasons li::marker {
-  color: rgba(255,255,255,0.9);
-}
-
 /* =============================================================
    PRIMARY QUICK-START ACTION — LOAD SAMPLE TRIP (FINAL)
 ============================================================= */
@@ -576,4 +527,54 @@ button#sampleBtn {
 button#sampleBtn:hover {
   background: rgba(56,189,248,0.22) !important;
   border-color: rgba(56,189,248,0.7) !important;
+}
+
+/* =========================================================
+   TOGGLE SWITCHES – SLIDING ICON (Drive + Theme)
+   ========================================================= */
+
+.drive-switch {
+  position: relative;
+  width: 46px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+  transition: background 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 2px;
+}
+
+/* the moving knob (emoji lives here) */
+.drive-switch::before {
+  content: attr(data-icon);
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* active background */
+.drive-switch-active {
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.35),
+    rgba(59, 130, 246, 0.35)
+  );
+}
+
+/* slide knob to right */
+.drive-switch-active::before {
+  transform: translate(20px, -50%);
+}
+
+/* prevent text selection / weird drag */
+.drive-switch,
+.drive-switch * {
+  user-select: none;
+  pointer-events: none;
 }
