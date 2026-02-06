@@ -1468,17 +1468,22 @@ loadProfileBtn?.addEventListener("click", () => {
 // ---------------------------------------------------------------
 // DRIVE MODE (visual only for now)
 // ---------------------------------------------------------------
-driveToggle?.addEventListener("click", () => {
-  const isActive = driveToggle.classList.toggle("drive-switch-active");
-  document.body.classList.toggle("drive-mode", isActive);
 
-  // ✅ iOS: use Drive Mode toggle as the one-time "gesture" to unlock audio for this session
-  if (isActive) {
-    unlockAudioOnce(); // best-effort; don't block UI
+driveToggle?.addEventListener("click", () => {
+  // Decide intent based on current logical state
+  const isTurningOn = !driveModeActive;
+
+  // iOS: use Drive Mode toggle as the one-time gesture to unlock audio
+  if (isTurningOn) {
+    unlockAudioOnce();
   }
 
-  // NEW: turn Drive Mode logic on/off (hands-free)
-  setDriveMode(isActive);
+  // 🔐 SINGLE SOURCE OF TRUTH
+  setDriveMode(isTurningOn);
+
+  // 🔁 Reflect state visually (CSS / SVG reads from this)
+  driveToggle.classList.toggle("drive-switch-active", isTurningOn);
+  document.body.classList.toggle("drive-mode", isTurningOn);
 });
 
 // ---------------------------------------------------------------
