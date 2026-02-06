@@ -899,6 +899,16 @@ async function runOptimize() {
 
 if (!origin || !destination) {
   const msg = "Please tell me both the origin and destination.";
+
+  // 🔒 HARD RESET — prevent stale recap / stale risk narration
+  lastOptimizeResult = null;
+  pendingRecapUrl = null;
+
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio = null;
+  }
+
   setUIState(UI_STATES.ERROR, msg);
   speakIfDriveMode(msg);
   return;
@@ -962,8 +972,7 @@ if (!origin || !destination) {
 const verdict = getBookingVerdict(verdictSignals);
 result.bookingVerdict = verdict;   
 
-  // Render verdict BEFORE backend recommendation (intentional)
-   
+  // Render verdict BEFORE backend recommendation (intentional) 
   renderBookingVerdict(verdict);
   renderBookingRecommendation({
      bookingLinks: result.bookingLinks || []
