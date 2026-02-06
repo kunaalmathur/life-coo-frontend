@@ -31,11 +31,41 @@
   <span>Modes</span>
 
   <div
-    id="driveToggle"
-    class="drive-switch"
-    title="Toggle Drive Mode"
-    data-icon="🧭"
-  ></div>
+  id="driveToggle"
+  class="drive-switch drive-switch-svg"
+  title="Toggle Drive Mode"
+  aria-label="Toggle Drive Mode"
+>
+  <svg
+    class="drive-icon"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <!-- Outer wheel -->
+    <circle
+      cx="12"
+      cy="12"
+      r="9"
+      stroke="currentColor"
+      stroke-width="1.8"
+    />
+    <!-- Center hub -->
+    <circle
+      cx="12"
+      cy="12"
+      r="2.2"
+      fill="currentColor"
+    />
+    <!-- Spokes -->
+    <line x1="12" y1="3" x2="12" y2="9" stroke="currentColor" stroke-width="1.6"/>
+    <line x1="3" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.6"/>
+    <line x1="15" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="1.6"/>
+  </svg>
+</div>
 
   <div
     id="themeToggle"
