@@ -263,6 +263,7 @@ function setDriveMode(isOn) {
     if (isOn) {
       driveModePrevPlayRecap = playRecapCheckbox.checked;
       playRecapCheckbox.checked = true;
+      showRoutingUpdated("Drive Mode on · Spoken recap enabled");
     } else if (driveModePrevPlayRecap !== null) {
       playRecapCheckbox.checked = driveModePrevPlayRecap;
       driveModePrevPlayRecap = null;
