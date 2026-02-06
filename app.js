@@ -1117,87 +1117,40 @@ if (hasFamily) {
 // BOOKING VERDICT (Frontend-only, v1)
 // ---------------------------------------------------------------
 
-function ensureBookingVerdictContainer() {
-  if (!bookingCard) return null;
-   
+function renderBookingVerdict(verdict) {
+  if (!bookingCard || !verdict) return;
+
   let verdictEl = document.getElementById("bookingVerdict");
   if (!verdictEl) {
     verdictEl = document.createElement("div");
     verdictEl.id = "bookingVerdict";
+    verdictEl.className = "lux-card";
     verdictEl.style.marginBottom = "16px";
-    verdictEl.style.padding = "12px 14px";
-    verdictEl.style.border = "1px solid rgba(255,255,255,0.15)";
-    verdictEl.style.borderRadius = "14px";
-    verdictEl.style.background = "rgba(17,24,39,0.85)";
 
-    // bookingCard.parentNode.insertBefore(verdictEl, bookingCard);
-    const whereToBookSection = bookingCard.closest(".rhs-section") || bookingCard.parentNode;
-    whereToBookSection.parentNode.insertBefore(verdictEl, whereToBookSection);
+    // INSERT ABOVE bookingCard
+    bookingCard.parentNode?.insertBefore(verdictEl, bookingCard);
   }
-  return verdictEl;
-}
 
-function renderBookingVerdict(verdict) {
-  const container = ensureBookingVerdictContainer();
-  if (!container || !verdict) return;
-
-  container.classList.add("booking-verdict");
-  container.innerHTML = `
-    <div style="
-      font-size:11px;
-      letter-spacing:0.18em;
-      opacity:0.6;
-      margin-bottom:10px;
-    ">
+  verdictEl.innerHTML = `
+    <div style="font-size:11px; letter-spacing:0.18em; opacity:0.6; margin-bottom:8px;">
       BOOKING VERDICT
     </div>
 
-    <div style="
-      font-size:20px;
-      font-weight:600;
-      margin-bottom:6px;
-    ">
+    <div style="font-size:20px; font-weight:600; margin-bottom:4px;">
       ${verdict.verdict}
     </div>
 
-    <div style="
-      font-size:12px;
-      opacity:0.6;
-      margin-bottom:14px;
-    ">
+    <div style="font-size:12px; opacity:0.6; margin-bottom:12px;">
       Confidence · ${verdict.confidence}
     </div>
 
-    <div style="
-  margin-bottom:12px;
-">
-  <div style="
-    font-size:11px;
-    letter-spacing:0.18em;
-    opacity:0.6;
-    margin-bottom:6px;
-  ">
-    HIDDEN RISK AVOIDED
-  </div>
+    <div style="font-size:13px; line-height:1.55; margin-bottom:10px;">
+      ${verdict.hiddenRisk}
+    </div>
 
-  <div style="
-    font-size:13px;
-    line-height:1.55;
-    opacity:0.95;
-  ">
-    ${verdict.hiddenRisk}
-  </div>
-</div>
-
-<ul style="
-  margin:0;
-  padding-left:18px;
-  line-height:1.45;
-">
-  ${verdict.reasons
-    .map(r => `<li style="margin-bottom:6px;">${normalizeDashes(r)}</li>`)
-    .join("")}
-</ul>
+    <ul style="padding-left:18px; margin:0;">
+      ${verdict.reasons.map(r => `<li>${normalizeDashes(r)}</li>`).join("")}
+    </ul>
   `;
 }
 
