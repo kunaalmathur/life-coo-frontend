@@ -577,6 +577,85 @@ button#sampleBtn:hover {
   user-select: none;
 }
 
+/* =========================================================
+   LIGHT MODE OVERRIDES (MINIMAL + SAFE)
+   ========================================================= */
+
+body.light-mode {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+body.light-mode .panel {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode .panel::before {
+  background: radial-gradient(
+    at top,
+    rgba(56, 189, 248, 0.12),
+    transparent 65%
+  );
+}
+
+body.light-mode .agent-box,
+body.light-mode .form-grid,
+body.light-mode .option-block,
+body.light-mode .lux-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+body.light-mode .input,
+body.light-mode .textarea,
+body.light-mode .agent-textarea {
+  background: rgba(15, 23, 42, 0.05);
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.18);
+}
+
+body.light-mode .results-title,
+body.light-mode .panel-title {
+  color: #0f172a;
+}
+
+body.light-mode .results-list li,
+body.light-mode .option-bullets li {
+  color: #0f172a;
+}
+
+body.light-mode .badge {
+  background: rgba(56, 189, 248, 0.14);
+  color: #0369a1;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
 .drive-switch * {
   pointer-events: none;
+}
+
+/* =========================================================
+   GLOBAL BULLET NORMALIZATION — RHS ONLY
+   Single source of truth for all result bullets
+   ========================================================= */
+
+.panel-right ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.panel-right li {
+  margin-bottom: 6px;
+  line-height: 1.45;
+}
+
+.panel-right ul li::marker {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Light mode bullet markers */
+body.light-mode .panel-right ul li::marker {
+  color: rgba(15, 23, 42, 0.6);
 }
