@@ -1203,9 +1203,6 @@ function renderResults(data) {
     });
   }
 
-  // ✅ ALWAYS evaluate booking recommendation independently
-  renderBookingRecommendation(data.bookingRecommendation);
-
   // Risk level pill
   setRiskLevel(data.riskLevel || "Medium");
 }
