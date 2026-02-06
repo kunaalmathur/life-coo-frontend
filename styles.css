@@ -348,10 +348,6 @@ button {
   text-transform: uppercase;
 }
 
-.results-list li + li {
-  margin-top: 4px;
-}
-
 .routing-options {
   display: flex;
   flex-direction: column;
@@ -415,10 +411,6 @@ button {
   margin-bottom: 10px;
 }
 
-.panel-right .lux-card #bookingReasons li + li {
-  margin-top: 10px;
-}
-
 /* Booking action pills */
 .lux-actions {
   display: flex;
@@ -456,15 +448,6 @@ button {
   /* IMPORTANT: no opacity → avoid dull text on glass */
   color: #f1f5f9;   /* brighter than --text-main */
   margin-bottom: 12px;
-}
-
-/* Phase 1.7 — Subtle hover confidence (no animation noise) */
-.panel-right .lux-card #bookingReasons li:hover {
-  color: #ffffff;
-}
-
-.panel-right .lux-card #bookingReasons li:hover::marker {
-  color: rgba(255,255,255,0.95);
 }
 
 /* =============================================================
