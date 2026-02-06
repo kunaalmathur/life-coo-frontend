@@ -400,6 +400,40 @@ button {
   }
 }
 
+/* =========================================================
+   MOBILE HEADER POLISH — DRIVE MODE FRIENDLY
+========================================================= */
+
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .header-right {
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+
+  .drive-toggle-wrapper {
+    font-size: 13px;
+    gap: 12px;
+  }
+
+  .drive-switch {
+    transform: scale(1.05); /* subtle finger-friendly size */
+  }
+}
+
 /* -------------------------------------------------------------
    BOOKING RECOMMENDATION — EXECUTIVE POLISH (Phase 1.6)
 -------------------------------------------------------------- */
