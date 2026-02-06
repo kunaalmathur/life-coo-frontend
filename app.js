@@ -6,6 +6,7 @@
 --------------------------------------------------------------- */
 
 const API_BASE = "https://life-coo-realtime-backend.onrender.com";
+const ENABLE_LLM_ENRICHMENT = false;
 
 // DOM REFERENCES ------------------------------------------------
 
@@ -97,16 +98,6 @@ let pendingRecapUrl = null;   // if iOS blocks autoplay, we store the audio here
 
 // ✅ iOS audio unlock (Drive Mode uses the toggle as the one "gesture" for the whole session)
 let audioUnlocked = false;
-
-function speakIfDriveMode(message) {
-  if (!driveModeActive || !message) return;
-
-  speakSummary({
-    execRecapBullets: [message],
-    routingOptions: [],
-    riskRadarBullets: []
-  }, { force: true });
-}
 
 async function unlockAudioOnce() {
   if (audioUnlocked) return true;
@@ -586,6 +577,7 @@ if (result.error) {
      // If interpret didn’t extract the minimum needed fields, don’t pretend we can optimize.
      if (!originInput.value.trim() || !destinationInput.value.trim()) {
        const msg = "I understood part of your request, but I still need the origin and destination.";
+       lastOptimizeResult = null; 
        setUIState(UI_STATES.ERROR, msg);
        speakIfDriveMode(msg);
        return;
@@ -1204,7 +1196,9 @@ function renderResults(data) {
   }
 
   // Risk level pill
-  setRiskLevel(data.riskLevel || "Medium");
+  if (data.riskLevel) {
+  setRiskLevel(data.riskLevel);
+}
 }
 
 // ✅ iOS autoplay fallback: when playback is blocked, store URL and ask user to tap
@@ -1236,6 +1230,28 @@ function isSafeToNarrateRisk(data) {
 }
 
 // ---------------------------------------------------------------
+// OPTIONAL: LLM ENRICHMENT (safe fallback)
+// ---------------------------------------------------------------
+async function enrichRecapWithLLM(bullets) {
+  try {
+    const res = await fetch(`${API_BASE}/llm-enrich`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bullets })
+    });
+
+    if (!res.ok) return bullets;
+
+    const json = await res.json();
+    return Array.isArray(json.enrichedBullets)
+      ? json.enrichedBullets
+      : bullets;
+  } catch {
+    return bullets;
+  }
+}
+
+// ---------------------------------------------------------------
 // SPEAK SUMMARY
 // - non-mutating recap construction
 // - spoken risk guardrails (single source of truth)
@@ -1247,6 +1263,7 @@ async function speakSummary(data, { force = false } = {}) {
   ? [...data.execRecapBullets]
   : [];
 
+// ✅ Inject booking guidance into spoken recap (non-mutating)
 if (data.bookingVerdict) {
   recapBullets.push(
     `Booking recommendation: ${data.bookingVerdict.verdict}.`,
@@ -1254,9 +1271,13 @@ if (data.bookingVerdict) {
   );
 }
 
+const enrichedBullets = ENABLE_LLM_ENRICHMENT
+  ? await enrichRecapWithLLM(recapBullets)
+  : recapBullets;
+
 data = {
   ...data,
-  execRecapBullets: recapBullets
+  execRecapBullets: enrichedBullets
 };
    
   // 🚨 Spoken risk guardrail — applies to ALL degraded / partial states
