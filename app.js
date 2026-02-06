@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------
-   LIFE COO - FRONTEND (Option C, Render-aligned)
-   - Matches Option C index.html
+   LIFE COO - FRONTEND (Booking Verdict™ Option B, Render-aligned)
+   - Matches current index.html structure
    - Talks to Render backend index.js
    - Stable, minimal, UAT-ready
 --------------------------------------------------------------- */
@@ -334,6 +334,14 @@ function handleDriveModeCommand(rawText) {
 document.addEventListener("DOMContentLoaded", () => {
   hydrateAirportDatalist();
   resetResults();
+
+  // Restore saved theme
+  try {
+    const saved = localStorage.getItem("lifeCooTheme");
+    if (saved === "light") {
+      document.body.classList.add("light-mode");
+    }
+  } catch (_) {}
 });
 
 // ---------------------------------------------------------------
@@ -902,7 +910,6 @@ const verdict = getBookingVerdict(verdictSignals);
   // Render verdict BEFORE backend recommendation (intentional)
    
   renderBookingVerdict(verdict); 
-
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
@@ -920,7 +927,7 @@ function renderBookingRecommendation(br) {
   if (!bookingCard || !br) return;
 
   bookingCard.classList.remove("hidden");
-  bookingChannel.textContent = "Execution";
+  bookingChannel.textContent = "Where to book";
 
   bookingReasons.innerHTML = ""; // 🔕 no bullets (intentional)
 
@@ -1071,6 +1078,7 @@ function renderBookingVerdict(verdict) {
   const container = ensureBookingVerdictContainer();
   if (!container || !verdict) return;
 
+  container.classList.add("booking-verdict");
   container.innerHTML = `
     <div style="
       font-size:11px;
@@ -1457,15 +1465,5 @@ themeToggle?.addEventListener("click", () => {
   try {
     const isLight = document.body.classList.contains("light-mode");
     localStorage.setItem("lifeCooTheme", isLight ? "light" : "dark");
-  } catch (_) {}
-});
-
-// Restore theme on load
-document.addEventListener("DOMContentLoaded", () => {
-  try {
-    const saved = localStorage.getItem("lifeCooTheme");
-    if (saved === "light") {
-      document.body.classList.add("light-mode");
-    }
   } catch (_) {}
 });
