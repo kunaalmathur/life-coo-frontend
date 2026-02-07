@@ -687,3 +687,72 @@ body.drive-mode .drive-switch-active {
       0 0 6px rgba(56,189,248,0.25);
   }
 }
+
+/* =========================================================
+   DRIVE MODE — LISTENING MICRO-GLOW (CSS-ONLY, DEMO SAFE)
+   Uses existing classes:
+   - body.drive-mode
+   - .agent-box.agent-box-active (set when mic is listening)
+========================================================= */
+
+/* 1) Subtle “edge aura” around the entire agent box while listening */
+body.drive-mode .agent-box.agent-box-active {
+  position: relative; /* safe even if already set elsewhere */
+}
+
+/* Soft glow halo (premium, non-gimmicky) */
+body.drive-mode .agent-box.agent-box-active::after {
+  content: "";
+  position: absolute;
+  inset: -6px;                 /* halo outside the box */
+  border-radius: calc(var(--radius-lg) + 8px);
+  pointer-events: none;
+
+  /* layered glow: gentle cyan + faint white lift */
+  background: radial-gradient(
+    circle at 20% 10%,
+    rgba(56, 189, 248, 0.20),
+    transparent 55%
+  );
+
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.18),
+    0 0 18px rgba(56, 189, 248, 0.22),
+    0 0 44px rgba(56, 189, 248, 0.12);
+
+  opacity: 0.85;
+  filter: blur(0.2px);
+  animation: listeningHalo 1.8s ease-in-out infinite;
+}
+
+/* Micro “breathing” effect */
+@keyframes listeningHalo {
+  0% {
+    opacity: 0.70;
+    transform: scale(0.995);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.005);
+  }
+  100% {
+    opacity: 0.70;
+    transform: scale(0.995);
+  }
+}
+
+/* 2) Optional: a tiny glow on the textarea border while listening */
+body.drive-mode .agent-box.agent-box-active .agent-textarea {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.14),
+    0 0 22px rgba(56, 189, 248, 0.10);
+}
+
+/* 3) Optional: voice button gets a faint “armed” sheen while listening */
+body.drive-mode .agent-box.agent-box-active #voiceBtn {
+  border-color: rgba(56, 189, 248, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.18),
+    0 0 18px rgba(56, 189, 248, 0.14);
+}
