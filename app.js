@@ -618,7 +618,7 @@ if (result.error) {
      }
 
      setUIState(UI_STATES.IDLE, "Trip understood. Optimizing now…");
-     await runOptimize();
+     await runOptimize({ fromDriveMode: driveModeActive });
      return;
 }    else {
      setUIState(UI_STATES.IDLE, "Trip understood. Ready to optimize.");
@@ -905,13 +905,12 @@ voiceBtn?.addEventListener("click", () => {
 // ---------------------------------------------------------------
 // OPTIMIZE - form → backend → RHS
 // ---------------------------------------------------------------
-async function runOptimize() {
-  if (driveModeDemoLock && driveModeActive) {
-     const msg = "Drive Mode is active. I’ll take it from here.";
-     setUIState(UI_STATES.LISTENING, msg);
-     speakIfDriveMode(msg);
-     return;
-   }
+async function runOptimize({ fromDriveMode = false } = {}) {
+  // Block ONLY manual optimize clicks while Drive Mode is active
+if (driveModeDemoLock && driveModeActive && !fromDriveMode) {
+  setUIState(UI_STATES.LISTENING, "Drive Mode is listening.");
+  return;
+}
   const origin = originInput.value.trim();
   const destination = destinationInput.value.trim();
 
@@ -1004,8 +1003,8 @@ result.bookingVerdict = verdict;
 }
 
 optimizeBtn?.addEventListener("click", async () => {
-  unlockAudioOnce();     // ✅ helps iPhone allow upcoming playback
-  await runOptimize();
+  unlockAudioOnce();
+  await runOptimize({ fromDriveMode: false });
 });
 
 function renderBookingRecommendation(br) {
