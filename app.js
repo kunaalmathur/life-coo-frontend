@@ -255,10 +255,18 @@ function resumeDriveModeListeningSafely() {
 let driveModeActive = false;
 let driveModePrevPlayRecap = null;
 
+// 🔒 FINAL DEMO LOCK — prevents unsafe manual actions while Drive Mode is active
+let driveModeDemoLock = false;
+
 function setDriveMode(isOn) {
   driveModeActive = isOn;
-
+  if (isOn) {
+    optimizeBtn?.setAttribute("aria-disabled", "true");
+  } else {
+    optimizeBtn?.removeAttribute("aria-disabled");
+  }
   // Auto-enable recap while in Drive Mode
+  driveModeDemoLock = isOn;
   if (playRecapCheckbox) {
     if (isOn) {
       driveModePrevPlayRecap = playRecapCheckbox.checked;
@@ -351,7 +359,7 @@ function handleDriveModeCommand(rawText) {
     }
     return true;
   }
-
+   
   // Not a command
   return false;
 }
@@ -806,6 +814,10 @@ runInterpret(true);
 }
 
 voiceBtn?.addEventListener("click", () => {
+   if (driveModeDemoLock && driveModeActive) {
+     setUIState(UI_STATES.LISTENING, "Drive Mode is listening.");
+     return;
+   }
 // ✅ If iOS blocked autoplay, let user tap to play recap instead of starting mic
   if (pendingRecapUrl) {
     // Stop mic if it's running
@@ -894,6 +906,12 @@ voiceBtn?.addEventListener("click", () => {
 // OPTIMIZE - form → backend → RHS
 // ---------------------------------------------------------------
 async function runOptimize() {
+  if (driveModeDemoLock && driveModeActive) {
+     const msg = "Drive Mode is active. I’ll take it from here.";
+     setUIState(UI_STATES.LISTENING, msg);
+     speakIfDriveMode(msg);
+     return;
+   }
   const origin = originInput.value.trim();
   const destination = destinationInput.value.trim();
 
@@ -980,7 +998,7 @@ result.bookingVerdict = verdict;
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
-  if (playRecapCheckbox?.checked || driveModeActive) {
+  if (!isSpeakingAudio && (playRecapCheckbox?.checked || driveModeActive)) {
   speakSummary(result);
   }
 }
