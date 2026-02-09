@@ -625,42 +625,6 @@ button#sampleBtn:hover {
 }
 
 /* =========================================================
-   DRIVE MODE — LISTENING MICRO-GLOW (BETA)
-   Pure CSS, zero logic risk
-========================================================= */
-
-/* Drive Mode ON baseline */
-body.drive-mode .drive-switch {
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,0.08),
-    0 0 14px var(--drive-glow);
-}
-
-/* Listening pulse */
-body.drive-mode .drive-switch-active {
-  animation: driveListeningPulse 1.8s ease-in-out infinite;
-}
-
-/* Ultra-subtle pulse — luxury, not gimmick */
-@keyframes driveListeningPulse {
-  0% {
-    box-shadow:
-      0 0 0 2px rgba(255,255,255,0.10),
-      0 0 10px rgba(56,189,248,0.35);
-  }
-  50% {
-    box-shadow:
-      0 0 0 2px rgba(255,255,255,0.22),
-      0 0 18px rgba(56,189,248,0.75);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(255,255,255,0.10),
-      0 0 10px rgba(56,189,248,0.35);
-  }
-}
-
-/* =========================================================
    AGENT BOX — MIC ARMED PULSE
    Calm, premium, non-distracting
 ========================================================= */
@@ -755,4 +719,22 @@ body.drive-mode .agent-box.agent-box-active #voiceBtn {
   box-shadow:
     0 0 0 1px rgba(56, 189, 248, 0.18),
     0 0 18px rgba(56, 189, 248, 0.14);
+}
+
+/* ---------------------------------------------------------------
+   BETA TRUST NOTE — ROUTING ACCURACY GUARDRAIL
+--------------------------------------------------------------- */
+
+.trust-note {
+  margin-top: 12px;
+  padding-top: 10px;
+
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+
+  color: rgba(255, 255, 255, 0.55);
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+
+  max-width: 520px;
 }
