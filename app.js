@@ -298,6 +298,12 @@ function setDriveMode(isOn) {
   rearmAfterEnd = false;
   driveModeQueued = false;
 
+  // ✅ Clear any pending recap playback
+  if (pendingRecapUrl) {
+    try { URL.revokeObjectURL(pendingRecapUrl); } catch (_) {}
+    pendingRecapUrl = null;
+  }
+   
   try { recognition && recognition.stop(); } catch (_) {}
   isRecognizing = false;
 
@@ -310,7 +316,7 @@ function setDriveMode(isOn) {
   micLockedForPlayback = false;
   isSpeakingAudio = false;
 
-  setUIState(UI_STATES.IDLE, "Drive Mode off.");
+  setUIState(UI_STATES.IDLE, "Ready.");
 }
 
 // Returns true if handled (so we don’t send it to /interpret)
@@ -566,6 +572,10 @@ async function postJSONWithRetry(path, body, options = {}) {
 // INTERPRET (free text → structured form)
 // ---------------------------------------------------------------
 async function runInterpret(autoOptimize = false) {
+  if (driveModeDemoLock && driveModeActive) {
+    setUIState(UI_STATES.LISTENING, "Drive Mode is listening.");
+    return;
+  }
   const text = (agentInput?.value || "").trim();
   if (!text) return;
 // ✅ Global voice/text commands (work even when Drive Mode is OFF)
@@ -590,6 +600,13 @@ async function runInterpret(autoOptimize = false) {
   if (aiFillOptimizeBtn) aiFillOptimizeBtn.disabled = false;
 
 if (result.error) {
+  lastOptimizeResult = null;
+  pendingRecapUrl = null;
+  if (activeAudio) {
+    activeAudio.pause();
+    activeAudio = null;
+  }
+
   const msg = "I couldn't understand that. Please rephrase your trip.";
   setUIState(UI_STATES.ERROR, msg);
   speakIfDriveMode(msg);
@@ -638,15 +655,12 @@ aiFillOptimizeBtn?.addEventListener("click", () => runInterpret(true));
 // ---------------------------------------------------------------
 
 function startListeningDriveMode() {
-  if (micLockedForPlayback) return;
+  if (micLockedForPlayback || isSpeakingAudio) return; // 🔒 HARD BLOCK
   if (!driveModeActive) return;
   if (!recognition) {
     setUIState(UI_STATES.ERROR, "Drive Mode requires a browser that supports voice input.");
     return;
   }
-
-  // ✅ Don’t listen while recap audio is playing (echo protection)
-  if (isSpeakingAudio) return;
 
   // ✅ If we are already listening, do nothing.
   if (isRecognizing) return;
@@ -814,6 +828,7 @@ runInterpret(true);
 }
 
 voiceBtn?.addEventListener("click", () => {
+   unlockAudioOnce(); // 👈 ADD THIS LINE
    if (driveModeDemoLock && driveModeActive) {
      setUIState(UI_STATES.LISTENING, "Drive Mode is listening.");
      return;
@@ -936,8 +951,6 @@ if (!origin || !destination) {
   const travellers = travellersInput.value.trim();
   const preferences = preferencesInput.value.trim();
   const notes = notesInput.value.trim();
-
-  setUIState(UI_STATES.OPTIMIZING, "Optimizing your routing…");
 
   // Optionally save profile
   if (rememberProfileCheckbox?.checked) {
