@@ -8,6 +8,18 @@
 const API_BASE = "https://life-coo-realtime-backend.onrender.com";
 const ENABLE_LLM_ENRICHMENT = false;
 
+// ---------------------------------------------------
+// FIX 5 — Airline booking links (frontend)
+// ---------------------------------------------------
+const AIRLINE_BOOKING_LINKS = {
+  AC: { label: "Air Canada", url: "https://www.aircanada.com" },
+  BA: { label: "British Airways", url: "https://www.britishairways.com" },
+  QF: { label: "Qantas", url: "https://www.qantas.com" },
+  DL: { label: "Delta", url: "https://www.delta.com" },
+  UA: { label: "United", url: "https://www.united.com" },
+  AA: { label: "American Airlines", url: "https://www.aa.com" }
+};
+
 // DOM REFERENCES ------------------------------------------------
 
 // Header / drive mode
@@ -1256,7 +1268,31 @@ function renderResults(data) {
       });
       block.appendChild(ul);
 
-      optionsContainer.appendChild(block);
+// ---------------------------------------------------
+// FIX 5 — Airline booking links (safe, fail-closed)
+// ---------------------------------------------------
+if (Array.isArray(opt.airlines) && opt.airlines.length) {
+  const linksDiv = document.createElement("div");
+  linksDiv.className = "airline-links";
+
+  opt.airlines.forEach((code) => {
+    const airline = AIRLINE_BOOKING_LINKS[code];
+    if (!airline) return; // fail closed
+
+    const a = document.createElement("a");
+    a.className = "lux-link-btn";
+    a.href = airline.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.textContent = `Book with ${airline.label}`;
+
+    linksDiv.appendChild(a);
+  });
+
+  block.appendChild(linksDiv);
+}
+
+optionsContainer.appendChild(block);
     });
   }
 
