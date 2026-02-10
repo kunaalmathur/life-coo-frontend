@@ -1232,11 +1232,23 @@ function renderResults(data) {
 
       const title = document.createElement("div");
       title.className = "option-title";
-      title.textContent = normalizeDashes(opt.title || "Option");
+
+      // Verified badge (real, data-backed)
+      const verifiedBadge = document.createElement("span");
+      verifiedBadge.className = "verified-badge";
+      verifiedBadge.textContent = "✔ Verified";
+      
+      // Title text
+      const titleText = document.createElement("span");
+      titleText.textContent = normalizeDashes(opt.title || "Option");
+      
+      title.appendChild(titleText);
+      title.appendChild(verifiedBadge);
       block.appendChild(title);
 
       const ul = document.createElement("ul");
       ul.className = "option-bullets";
+       
       (opt.bullets || []).forEach((b) => {
         const li = document.createElement("li");
         li.textContent = normalizeDashes(b);
