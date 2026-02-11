@@ -1016,9 +1016,9 @@ result.bookingVerdict = verdict;
 
   // Render verdict BEFORE backend recommendation (intentional) 
   renderBookingVerdict(verdict);
-  renderBookingRecommendation({
-     bookingLinks: result.bookingLinks || []
-  });
+  renderBookingRecommendation(
+     result.bookingRecommendation || { bookingLinks: [] }
+  );
   renderResults(result);
   setUIState(UI_STATES.IDLE, "Routing updated just now.");
 
