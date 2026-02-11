@@ -1245,28 +1245,32 @@ function renderResults(data) {
       const title = document.createElement("div");
       title.className = "option-title";
 
-      // Verified badge (real, data-backed)
-      const verifiedBadge = document.createElement("span");
-      verifiedBadge.className = "verified-badge";
-      verifiedBadge.textContent = "✔ Verified";
-      
-      // Title text
-      const titleText = document.createElement("span");
-      titleText.textContent = normalizeDashes(opt.title || "Option");
-      
-      title.appendChild(titleText);
-      title.appendChild(verifiedBadge);
-      block.appendChild(title);
+// Title text
+const titleText = document.createElement("span");
+titleText.textContent = normalizeDashes(opt.title || "Option");
 
-      const ul = document.createElement("ul");
-      ul.className = "option-bullets";
+title.appendChild(titleText);
+
+// Only show ✔ Verified when airlines are real (Duffel-backed)
+if (Array.isArray(opt.airlines) && opt.airlines.length > 0) {
+  const verifiedBadge = document.createElement("span");
+  verifiedBadge.className = "verified-badge";
+  verifiedBadge.textContent = "✔ Verified";
+  title.appendChild(verifiedBadge);
+}
+
+block.appendChild(title);
+
+const ul = document.createElement("ul");
+ul.className = "option-bullets";
+
+(opt.bullets || []).forEach((b) => {
+  const li = document.createElement("li");
+  li.textContent = normalizeDashes(b);
+  ul.appendChild(li);
+});
+block.appendChild(ul);
        
-      (opt.bullets || []).forEach((b) => {
-        const li = document.createElement("li");
-        li.textContent = normalizeDashes(b);
-        ul.appendChild(li);
-      });
-      block.appendChild(ul);
 // ---------------------------------------------------
 // INVESTOR POLISH — "Why this route" explainer
 // ---------------------------------------------------
