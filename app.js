@@ -1267,7 +1267,31 @@ function renderResults(data) {
         ul.appendChild(li);
       });
       block.appendChild(ul);
+// ---------------------------------------------------
+// INVESTOR POLISH — "Why this route" explainer
+// ---------------------------------------------------
+if (Array.isArray(data.riskRadarBullets) && data.riskRadarBullets.length) {
+  const explainer = document.createElement("div");
+  explainer.className = "why-route";
 
+  const explainerTitle = document.createElement("div");
+  explainerTitle.className = "why-route-title";
+  explainerTitle.textContent = "Why this route";
+
+  const explainerList = document.createElement("ul");
+  explainerList.className = "why-route-body";
+
+  data.riskRadarBullets.slice(0, 2).forEach((reason) => {
+    const li = document.createElement("li");
+    li.textContent = normalizeDashes(reason);
+    explainerList.appendChild(li);
+  });
+
+  explainer.appendChild(explainerTitle);
+  explainer.appendChild(explainerList);
+  block.appendChild(explainer);
+}
+       
 // ---------------------------------------------------
 // FIX 5 — Airline booking links (safe, fail-closed)
 // ---------------------------------------------------
